@@ -1,0 +1,210 @@
+{
+  "version": 1,
+  "category": "households",
+  "count": 2990,
+  "idField": "CODE",
+  "idsFile": "../../core/ids.json",
+  "namesFile": "../../core/names.json",
+  "nameField": "NAME",
+  "stringsFile": "strings.json",
+  "numericProperties": [
+    "HHLD_R",
+    "HHLD_S",
+    "HHLD_1P",
+    "HHLD_1G",
+    "HHLD_2G",
+    "HHLD_3G",
+    "HHLD_4GP",
+    "HHLD_65",
+    "HHLD_65_1",
+    "HHLD_65_2",
+    "HHLD_65_3P"
+  ],
+  "stringProperties": [],
+  "packs": {
+    "pack-0": {
+      "file": "pack-0.bin",
+      "byteLength": 131560,
+      "metrics": [
+        "HHLD_R",
+        "HHLD_S",
+        "HHLD_1P",
+        "HHLD_1G",
+        "HHLD_2G",
+        "HHLD_3G",
+        "HHLD_4GP",
+        "HHLD_65",
+        "HHLD_65_1",
+        "HHLD_65_2",
+        "HHLD_65_3P"
+      ]
+    }
+  },
+  "metrics": {
+    "HHLD_R": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 0,
+      "length": 2990,
+      "stats": {
+        "min": 0.0016,
+        "max": 0.9989,
+        "mean": 0.9240344931415182,
+        "median": 0.9435999989509583,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "HHLD_S": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 11960,
+      "length": 2990,
+      "stats": {
+        "min": 1,
+        "max": 225,
+        "mean": 2.7456172632987657,
+        "median": 2.619999885559082,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "HHLD_1P": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 23920,
+      "length": 2990,
+      "stats": {
+        "min": 0.0965,
+        "max": 1,
+        "mean": 0.24509946470391417,
+        "median": 0.23819999396800995,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "HHLD_1G": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 35880,
+      "length": 2990,
+      "stats": {
+        "min": 0.1874,
+        "max": 1,
+        "mean": 0.4802818668450984,
+        "median": 0.476500004529953,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "HHLD_2G": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 47840,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.6558,
+        "mean": 0.3783882569421214,
+        "median": 0.3799000084400177,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "HHLD_3G": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 59800,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.3942,
+        "mean": 0.13568711943793932,
+        "median": 0.1348000019788742,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "HHLD_4GP": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 71760,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.0544,
+        "mean": 0.005643827367012375,
+        "median": 0.00419999985024333,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "HHLD_65": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 83720,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.5095,
+        "mean": 0.271165239210438,
+        "median": 0.2791000008583069,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "HHLD_65_1": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 95680,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.2926,
+        "mean": 0.1721970558715294,
+        "median": 0.17440000176429749,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "HHLD_65_2": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 107640,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.2322,
+        "mean": 0.09750956841753111,
+        "median": 0.09870000183582306,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "HHLD_65_3P": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 119600,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.0116,
+        "mean": 0.0014585145533623314,
+        "median": 0.0012000000569969416,
+        "count": 2989,
+        "missingCount": 1
+      }
+    }
+  }
+}

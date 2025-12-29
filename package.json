@@ -1,0 +1,34 @@
+{
+  "name": "tudigong",
+  "version": "1.0.0-alpha.1",
+  "type": "module",
+  "description": "",
+  "main": "index.html",
+  "scripts": {
+    "build": "node scripts/build.js",
+    "dev": "node scripts/dev.js",
+    "start": "npm run build && npx http-server -c-1 dist"
+  },
+  "devDependencies": {
+    "@eslint/css": "^0.14.1",
+    "@eslint/js": "^9.39.2",
+    "@eslint/json": "^0.14.0",
+    "esbuild": "^0.27.2",
+    "eslint": "^9.39.2"
+  },
+  "dependencies": {
+    "@deck.gl/core": "^9.2.5",
+    "@deck.gl/extensions": "^9.2.5",
+    "@deck.gl/layers": "^9.2.5",
+    "d3": "^7.9.0",
+    "topojson-client": "^3.1.0",
+    "simple-statistics": "^7.8.8"
+  },
+  "private": true,
+  "directories": {
+    "lib": "lib"
+  },
+  "keywords": [],
+  "author": "@thebamboogrove",
+  "license": "MIT"
+}

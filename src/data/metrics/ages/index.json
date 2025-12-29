@@ -1,0 +1,414 @@
+{
+  "version": 1,
+  "category": "ages",
+  "count": 2990,
+  "idField": "CODE",
+  "idsFile": "../../core/ids.json",
+  "namesFile": "../../core/names.json",
+  "nameField": "NAME",
+  "stringsFile": "strings.json",
+  "numericProperties": [
+    "AGES_0-14",
+    "AGES_15-64",
+    "AGES_65P",
+    "AGES_W_15-49",
+    "AGES_0",
+    "AGES_1-4",
+    "AGES_5-9",
+    "AGES_10-14",
+    "AGES_15-19",
+    "AGES_20-24",
+    "AGES_25-29",
+    "AGES_30-34",
+    "AGES_35-39",
+    "AGES_40-44",
+    "AGES_45-49",
+    "AGES_50-54",
+    "AGES_55-59",
+    "AGES_60-64",
+    "AGES_65-69",
+    "AGES_70-74",
+    "AGES_75-79",
+    "AGES_80-84",
+    "AGES_85P"
+  ],
+  "stringProperties": [],
+  "packs": {
+    "pack-0": {
+      "file": "pack-0.bin",
+      "byteLength": 275080,
+      "metrics": [
+        "AGES_0-14",
+        "AGES_15-64",
+        "AGES_65P",
+        "AGES_W_15-49",
+        "AGES_0",
+        "AGES_1-4",
+        "AGES_5-9",
+        "AGES_10-14",
+        "AGES_15-19",
+        "AGES_20-24",
+        "AGES_25-29",
+        "AGES_30-34",
+        "AGES_35-39",
+        "AGES_40-44",
+        "AGES_45-49",
+        "AGES_50-54",
+        "AGES_55-59",
+        "AGES_60-64",
+        "AGES_65-69",
+        "AGES_70-74",
+        "AGES_75-79",
+        "AGES_80-84",
+        "AGES_85P"
+      ]
+    }
+  },
+  "metrics": {
+    "AGES_0-14": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 0,
+      "length": 2990,
+      "stats": {
+        "min": 0.0285,
+        "max": 0.4078,
+        "mean": 0.181765640682502,
+        "median": 0.17659999430179596,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "AGES_15-64": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 11960,
+      "length": 2990,
+      "stats": {
+        "min": 0.3435,
+        "max": 0.9469,
+        "mean": 0.681715423218466,
+        "median": 0.6811000108718872,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "AGES_65P": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 23920,
+      "length": 2990,
+      "stats": {
+        "min": 0.0095,
+        "max": 0.2998,
+        "mean": 0.13633757109401126,
+        "median": 0.13689999282360077,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "AGES_W_15-49": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 35880,
+      "length": 2990,
+      "stats": {
+        "min": 0.0935,
+        "max": 0.4276,
+        "mean": 0.22258256942121105,
+        "median": 0.21690000593662262,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "AGES_0": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 47840,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.0252,
+        "mean": 0.008584442957510884,
+        "median": 0.00839999970048666,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "AGES_1-4": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 59800,
+      "length": 2990,
+      "stats": {
+        "min": 0.0097,
+        "max": 0.1192,
+        "mean": 0.04647166276346598,
+        "median": 0.04639999940991402,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "AGES_5-9": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 71760,
+      "length": 2990,
+      "stats": {
+        "min": 0.0069,
+        "max": 0.2014,
+        "mean": 0.06452793576446977,
+        "median": 0.0617000013589859,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "AGES_10-14": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 83720,
+      "length": 2990,
+      "stats": {
+        "min": 0.0072,
+        "max": 0.1423,
+        "mean": 0.062181733021077185,
+        "median": 0.05939999967813492,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "AGES_15-19": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 95680,
+      "length": 2990,
+      "stats": {
+        "min": 0.0104,
+        "max": 0.3765,
+        "mean": 0.0508214787554365,
+        "median": 0.04729999974370003,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "AGES_20-24": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 107640,
+      "length": 2990,
+      "stats": {
+        "min": 0.015,
+        "max": 0.3281,
+        "mean": 0.04870879892940787,
+        "median": 0.04309999942779541,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "AGES_25-29": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 119600,
+      "length": 2990,
+      "stats": {
+        "min": 0.021,
+        "max": 0.2276,
+        "mean": 0.061812880562061016,
+        "median": 0.059300001710653305,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "AGES_30-34": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 131560,
+      "length": 2990,
+      "stats": {
+        "min": 0.0326,
+        "max": 0.2168,
+        "mean": 0.08326219471395105,
+        "median": 0.08060000091791153,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "AGES_35-39": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 143520,
+      "length": 2990,
+      "stats": {
+        "min": 0.026,
+        "max": 0.1241,
+        "mean": 0.06811164268986279,
+        "median": 0.06679999828338623,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "AGES_40-44": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 155480,
+      "length": 2990,
+      "stats": {
+        "min": 0.0308,
+        "max": 0.1186,
+        "mean": 0.0666513215122115,
+        "median": 0.06650000065565109,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "AGES_45-49": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 167440,
+      "length": 2990,
+      "stats": {
+        "min": 0.0405,
+        "max": 0.1732,
+        "mean": 0.0843068584810973,
+        "median": 0.0835999995470047,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "AGES_50-54": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 179400,
+      "length": 2990,
+      "stats": {
+        "min": 0.0358,
+        "max": 0.1848,
+        "mean": 0.08976436935429925,
+        "median": 0.08860000222921371,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "AGES_55-59": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 191360,
+      "length": 2990,
+      "stats": {
+        "min": 0.0258,
+        "max": 0.1506,
+        "mean": 0.07473124790899968,
+        "median": 0.07360000163316727,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "AGES_60-64": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 203320,
+      "length": 2990,
+      "stats": {
+        "min": 0.0069,
+        "max": 0.1267,
+        "mean": 0.05354767480762778,
+        "median": 0.051600001752376556,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "AGES_65-69": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 215280,
+      "length": 2990,
+      "stats": {
+        "min": 0.0032,
+        "max": 0.1195,
+        "mean": 0.0529434593509535,
+        "median": 0.052799999713897705,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "AGES_70-74": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 227240,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.0799,
+        "mean": 0.035635965205754454,
+        "median": 0.035599999129772186,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "AGES_75-79": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 239200,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.0554,
+        "mean": 0.022691033790565397,
+        "median": 0.02250000089406967,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "AGES_80-84": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 251160,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.0377,
+        "mean": 0.014649079959852793,
+        "median": 0.014399999752640724,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "AGES_85P": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 263120,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.032,
+        "mean": 0.010419638675142185,
+        "median": 0.010099999606609344,
+        "count": 2989,
+        "missingCount": 1
+      }
+    }
+  }
+}

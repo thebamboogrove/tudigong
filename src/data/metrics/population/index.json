@@ -1,0 +1,142 @@
+{
+  "version": 1,
+  "category": "population",
+  "count": 2990,
+  "idField": "CODE",
+  "idsFile": "../../core/ids.json",
+  "namesFile": "../../core/names.json",
+  "nameField": "NAME",
+  "stringsFile": "strings.json",
+  "numericProperties": [
+    "POPU",
+    "POPU_WM",
+    "POPU_ETHNIC",
+    "POPU_URB",
+    "POPU_REG_C",
+    "POPU_REG_P",
+    "POPU_REG_O"
+  ],
+  "stringProperties": [],
+  "packs": {
+    "pack-0": {
+      "file": "pack-0.bin",
+      "byteLength": 83720,
+      "metrics": [
+        "POPU",
+        "POPU_WM",
+        "POPU_ETHNIC",
+        "POPU_URB",
+        "POPU_REG_C",
+        "POPU_REG_P",
+        "POPU_REG_O"
+      ]
+    }
+  },
+  "metrics": {
+    "POPU": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 0,
+      "length": 2990,
+      "stats": {
+        "min": 145,
+        "max": 10466625,
+        "mean": 471689.1013716962,
+        "median": 359155,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "POPU_WM": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 11960,
+      "length": 2990,
+      "stats": {
+        "min": 77.75,
+        "max": 403.34,
+        "mean": 105.48545332887265,
+        "median": 104.16999816894531,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "POPU_ETHNIC": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 23920,
+      "length": 2990,
+      "stats": {
+        "min": 0.0003,
+        "max": 0.9864,
+        "mean": 0.1628070592171297,
+        "median": 0.019200000911951065,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "POPU_URB": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 35880,
+      "length": 2990,
+      "stats": {
+        "min": 0.0144,
+        "max": 1,
+        "mean": 0.5880627634660434,
+        "median": 0.5370000004768372,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "POPU_REG_C": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 47840,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.5719,
+        "mean": 0.138953195048511,
+        "median": 0.12870000302791595,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "POPU_REG_P": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 59800,
+      "length": 2990,
+      "stats": {
+        "min": 0.0054,
+        "max": 0.7373,
+        "mean": 0.11550197390431581,
+        "median": 0.062199998646974564,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
+    "POPU_REG_O": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 71760,
+      "length": 2990,
+      "stats": {
+        "min": 0.0013,
+        "max": 0.8069,
+        "mean": 0.05833061224489809,
+        "median": 0.025200000032782555,
+        "count": 2989,
+        "missingCount": 1
+      }
+    }
+  }
+}

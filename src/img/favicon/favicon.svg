@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="48" height="48"><svg id="SvgjsSvg1009" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+        stroke: #ffe0d4;
+        stroke-linejoin: round;
+        stroke-width: 3px;
+      }
+
+      .cls-2 {
+        fill: #1a1a1a;
+      }
+    </style>
+  </defs>
+  <rect class="cls-2" x="0" y="0" width="48" height="48" rx="8" ry="8"></rect>
+  <g>
+    <polyline class="cls-1" points="24.04 4.6 24.04 10.58 13.09 15.03 13.08 39.01"></polyline>
+    <path class="cls-1" d="M19.97,16.02v4.16c0,.93.06,1.42.42,2.09s2.17,2.28,3.61,2.28"></path>
+    <path class="cls-1" d="M28.03,16.02v4.16c0,.93-.06,1.42-.42,2.09s-2.17,2.28-3.61,2.28"></path>
+    <line class="cls-1" x1="19.93" y1="18.01" x2="28.07" y2="18.01"></line>
+    <polyline class="cls-1" points="23.96 4.6 23.96 10.58 34.91 15.03 34.92 39.01"></polyline>
+    <path class="cls-1" d="M19.97,27.13v4.2c0,.93.06,1.42.42,2.09s2.17,2.28,3.61,2.28"></path>
+    <path class="cls-1" d="M28.03,27.13v4.2c0,.93-.06,1.42-.42,2.09s-2.17,2.28-3.61,2.28"></path>
+    <line class="cls-1" x1="19.93" y1="29.12" x2="28.07" y2="29.12"></line>
+  </g>
+</svg><style>@media (prefers-color-scheme: light) { :root { filter: none; } }
+@media (prefers-color-scheme: dark) { :root { filter: none; } }
+</style></svg>

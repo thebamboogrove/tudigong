@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Tudigong - China County Choropleth</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script type="module" src="./dist/src/js/main.js"></script>
+
+    <link rel="stylesheet" href="./src/css/main.css">
+    <link rel="preconnect" href="https://fonts.bunny.net" crossorigin>
+    <link rel="stylesheet" href="https://fonts.bunny.net/css?family=noto-sans-sc:400,600&display=swap">
+
+    <link rel="icon" type="image/png" href="./src/img/favicon/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="./src/img/favicon/favicon.svg" />
+    <link rel="shortcut icon" href="./src/img/favicon/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./src/img/favicon/apple-touch-icon.png" />
+    <link rel="manifest" href="./src/img/favicon/site.webmanifest" />
+
+</head>
+<body>
+<div class="text-container">
+    <h1>China county-level map</h1>
+    <h2>with 2020 Chinese Census <sup id="fnref1"><a href="#fn1">1</a></sup> & GHSL <sup id="fnref2"><a
+            href="#fn2">2</a></sup><sup id="fnref3"><a href="#fn3">3</a></sup><sup id="fnref4"><a
+            href="#fn4">4</a></sup> data</h2>
+    <br>
+    <p>Spatial map consisting of 2844 + 4 + 5 + 2 + 135 boundary divisions based on 2021 boundary data <sup id="fnref5"><a
+            href="#fn5">5</a></sup><sup id="fnref6"><a href="#fn6">6</a></sup> and de-facto divisions included in census tabulation, of
+        which:</p>
+    <br>
+    <ul>
+        <li>2844 standard county-sized divisions</li>
+        <li>4 prefecture-level divisions without any county-sized sub-divisions <sup id="fnref7"><a
+                href="#fn7">7</a></sup></li>
+        <li>5 non-formal county-level administrative zones <sup id="fnref8"><a href="#fn8">8</a></sup></li>
+        <li>2 previously used and named county-level divisions <sup id="fnref9"><a href="#fn9">9</a></sup></li>
+        <li>135 special areas <sup id="fnref10"><a href="#fn10">10</a></sup><sup id="fnref11"><a
+                href="#fn11">11</a></sup> included in county-sized tabulated data
+        </li>
+    </ul>
+    <br>
+    <p>With additions affecting roughly 190 standard county-level divisions.</p>
+    <br>
+    <div class="alert warning">Boundaries are broadly in accordance with the P.R.C.'s national legislation and standards, and any internationally disputed boundary is not defined as such.</div>
+    <div class="alert warning">The names of county-level divisions might not correspond temporally to census data.</div>
+    <div class="alert note">Geospatial additions and all other features are sometimes approximate and inaccurate as a
+        result of simplified boundary data.
+    </div>
+    <div class="alert note">Map is denoted with WGS84 (EPSG:4326) coordinates but uses an AEA China projection
+        <sup id="fnref12"><a href="#fn12">12</a></sup> for display purposes.
+    </div>
+    <div class="alert info">GHSL data for 2990 county-level divisions R<sup>2</sup>≈0.8747, y=0.9922x6741, MAE=84020 & RMSE=162112</div>
+</div>
+<div class="container">
+    <div class="loading" id="loading">
+        <div>Loading map data...</div>
+    </div>
+    <div class="map-container">
+        <div id="map"></div>
+        <div class="tooltip" id="tooltip" style="display: none"></div>
+        <div class="legend" id="legend">
+            <button class="legend-toggle" id="legendToggle" type="button" aria-label="Toggle legend details" aria-expanded="true">
+                <svg class="legend-toggle-icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+                    <path d="M4 6.25L8 10.25L12 6.25" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+            </button>
+            <div id="legendContent">Loading...</div>
+        </div>
+        <template id="tooltip-template">
+            <div class="tooltip-title" style="font-weight:700;"></div>
+            <div class="tooltip-subtitle"></div>
+            <div class="tooltip-metric-line"><span class="tooltip-metric"></span><br><span class="tooltip-value"></span>
+            </div>
+        </template>
+
+        <template id="legend-gradient-template">
+            <div class="legend-container">
+                <div class="legend-text">
+                    <div class="legend-title"></div>
+                    <div class="legend-description"></div>
+                </div>
+                <div class="legend-gradient">
+                    <div class="legend-row">
+                        <div class="legend-canvas-wrap"></div>
+                    </div>
+                    <div class="legend-axis" style="position:relative; height:26px;">
+                        <div class="axis-line"></div>
+                    </div>
+                    <div class="legend-badge"></div>
+                </div>
+            </div>
+        </template>
+
+        <template id="bivar-legend-template">
+            <div class="bivar-legend-text">
+                <div class="bivar-title"></div>
+                <div class="bivar-description" style="display:none;"></div>
+            </div>
+            <div class="bivar-legend-container">
+                <div class="bivar-y">
+                    <div class="bivar-y-label"></div>
+                    <div class="bivar-y-axis"></div>
+                </div>
+
+                <div class="bivar-canvas-wrap" style="position:relative;">
+                </div>
+                <div class="bivar-x">
+                    <div class="bivar-x-axis"></div>
+                    <div class="bivar-x-label"></div>
+                </div>
+
+                <div class="bivar-info">
+                    <div class="bivar-info-x"></div>
+                </div>
+            </div>
+        </template>
+
+        <template id="range-filter-template">
+            <div class="control-group range-filter-block">
+                <label class="range-filter-label" style="display:none;"></label>
+                <span class="filter-value-display"></span>
+
+                <div class="dual-range">
+                    <input type="range" class="thumb-min" min="0" max="100" step="1">
+                    <input type="range" class="thumb-max" min="0" max="100" step="1">
+                    <div class="bg"></div>
+                    <div class="metric-axis"></div>
+                </div>
+
+                <div class="range-fields">
+                    <div class="field">
+                        <label part="label-min">Min</label>
+                        <input type="text" class="input-min" inputmode="decimal">
+                    </div>
+                    <div class="field" >
+                        <label part="label-max">Max</label>
+                        <input type="text" class="input-max" inputmode="decimal">
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <template id="range-filter-tick-template">
+            <div class="tick">
+                <div class="tick-line"></div>
+            </div>
+        </template>
+    </div>
+</div>
+
+<div class="map-controls">
+    <div class="map-controls-col">
+    <h2>Map Controls</h2>
+    <div class="control-group">
+        <label class="hidden">Category</label>
+        <select id="categorySelect"></select>
+    </div>
+
+    <div class="control-group">
+        <label class="hidden">Metric</label>
+        <div class="metric-selector" id="metricSelector">
+        </div>
+    </div>
+    </div>
+
+    <div class="map-controls-col">
+    <div class="filter-controls" id="filterControls">
+        <div class="control-group">
+            <label class="hidden">Metric Filter</label>
+            <div class="dual-range" id="metricDualRange" style="display:none;">
+                <input type="range" class="thumb-min" id="filterMinPct" min="0" max="100" value="0" step="1">
+                <input type="range" class="thumb-max" id="filterMaxPct" min="0" max="100" value="100" step="1">
+                <div class="bg"></div>
+            </div>
+            <div class="range-fields" id="metricRangeFields" style="display:none;">
+                <div class="field">
+                    <label for="filterMinVal">Min</label>
+                    <input type="text" id="filterMinVal" inputmode="decimal"
+                           pattern="^(?:\d+(?:\.\d+)?[kKmMbB]|\d+)$">
+                </div>
+                <div class="field">
+                    <label for="filterMaxVal">Max</label>
+                    <input type="text" id="filterMaxVal" inputmode="decimal"
+                           pattern="^(?:\d+(?:\.\d+)?[kKmMbB]|\d+)$">
+                </div>
+            </div>
+            <div class="categorical-filter" id="categoricalFilter" style="display:none;">
+            </div>
+            <div class="composite-controls" id="compositeControls" style="display:none; margin-top:8px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <label id="compositeLabel">Components</label>
+                    <div style="display:flex; gap:6px;">
+                        <button type="button" id="compositeSelectAll" class="btn-small">All</button>
+                        <button type="button" id="compositeSelectNone" class="btn-small">None</button>
+                        <button type="button" id="compositeSelectDefault" class="btn-small">Default</button>
+                    </div>
+                </div>
+                <div id="compositeParts" style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px; margin-top:6px;"></div>
+            </div>
+            <div id="filterValue" class="filter-value">Loading filter..</div>
+        </div>
+    </div>
+    </div>
+</div>
+
+<div class="text-container">
+    <h3>Notes & Bibliography</h3>
+    <ol class="footnotes">
+        <li id="fn1">
+            National Bureau of Statistics of China.<br>
+            Tabulation on the 2020 China Population Census by County.<br>
+            Beijing: China Statistics Press, 2022.<br>
+            ISBN 978-7-5037-9772-9.
+            <a href="#fnref1">↩︎</a>
+        </li>
+        <li id="fn2">
+            Schiavina M., Melchiorri M., Pesaresi M.<br>
+            GHS-SMOD R2023A: GHS Settlement Layers, Application of the Degree of Urbanisation Methodology (Stage I) to
+            GHS-POP R2023A and GHS-BUILT-S R2023A, Multitemporal (1975–2030).<br>
+            European Commission, Joint Research Centre (JRC), 2023.<br>
+            PID: https://data.europa.eu/89h/a0df7a6f-49de-46ea-9bde-563437a6e2ba<br>
+            https://doi.org/10.2905/A0DF7A6F-49DE-46EA-9BDE-563437A6E2BA2
+            <a href="#fnref2">↩︎</a>
+        </li>
+        <li id="fn3">
+            Schiavina M., Freire S., Carioli A., MacManus K.<br>
+            GHS-POP R2023A: GHS Population Grid Multitemporal (1975–2030).<br>
+            European Commission, Joint Research Centre (JRC), 2023.<br>
+            PID: https://data.europa.eu/89h/2ff68a52-5b5b-4a22-8f40-c41da8332cfe<br>
+            https://doi.org/10.2905/2FF68A52-5B5B-4A22-8F40-C41DA8332CFE
+            <a href="#fnref3">↩︎</a>
+        </li>
+        <li id="fn4">
+            Pesaresi M., Schiavina M., Politis P., Freire S., Krasnodębska K., Uhl J. H., Carioli A., Corbane C.,
+            Dijkstra L., Florio P., Friedrich H. K., Gao J., Leyk S., Lu L., Maffenini L., Mari-Rivero I., Melchiorri
+            M., Syrris V., Van Den Hoek J., Kemper T.<br>
+            "Advances on the Global Human Settlement Layer by Joint Assessment of Earth Observation and Population
+            Survey Data." International Journal of Digital Earth 17, no. 1 (2024).<br>
+            https://doi.org/10.1080/17538947.2024.2390454
+            <a href="#fnref4">↩︎</a>
+        </li>
+        <li id="fn5">
+            Rui C., Zhang H., Chen B.<br>
+            "China Temporal Administrative Map: A Multitemporal Database for Chinese Historical Administrative Divisions
+            (2009–2023)." In Proceedings of the Third International Conference on Environmental Remote Sensing and
+            Geographic Information Technology (ERSGIT 2024), 497–507. SPIE, 2025.<br>
+            https://doi.org/10.1117/12.3059430
+            <a href="#fnref5">↩︎</a>
+        </li>
+        <li id="fn6">
+            Rui Cheng.<br>
+            CTAmap: A Long-term Series of Provincial, Municipal and County Administrative Division Dataset (2000–2024).
+            Version 1.30. Dataset, 2025.<br>
+            https://www.shengshixian.com
+            <a href="#fnref6">↩︎</a>
+        </li>
+        <li id="fn7">
+            儋州市, 东莞市, 嘉峪关市, and 中山市.
+            <a href="#fnref7">↩︎</a>
+        </li>
+        <li id="fn8">
+            大柴旦行政委员会 assigned to 海西蒙古族藏族自治州.<br>
+            呼中区, 新林区, 松岭区, and 加格达奇区 assigned to 大兴安岭地区.
+            <a href="#fnref8">↩︎</a>
+        </li>
+        <li id="fn9">
+            江苏省南通市港闸区, and 安徽省芜湖市三山区.
+            <a href="#fnref9">↩︎</a>
+        </li>
+
+        <li id="fn10">
+            Development zones, administrative districts, and various other non-formal administrative regions.
+            <a href="#fnref10">↩︎</a>
+        </li>
+        <li id="fn11">
+            These special areas have been assigned un-official administrative and statistical codes in the following
+            format:
+            <table class="ad-code">
+                <tbody>
+                <tr>
+                    <td>X</td>
+                    <td>X</td>
+                    <td>Y</td>
+                    <td>Y</td>
+                    <td>7</td>
+                    <td>Z</td>
+                </tr>
+                </tbody>
+            </table>
+            XX = Provincial-level code. YY = Prefecture-level. 7Z = County-level code beginning with digit 7, with Z
+            being 1–9
+            e.g., 130171. These codes have been assigned for statistical purposes, and as such are not authoritative nor
+            to be trusted to be accurate.
+            <a href="#fnref11">↩︎</a>
+        </li>
+        <li id="fn12">
+            Albers equal-area conic projection centered on Mainland China.<br>
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+                <msub>
+                    <mi mathvariant="normal">&#x3d5;</mi>
+                    <mn>0</mn>
+                </msub>
+                <mo>=</mo>
+                <mn>36</mn>
+                <mo>&#xb0;</mo>
+                <mn>00</mn>
+                <mo>'</mo>
+                <mn>00</mn>
+                <mo>&quot;</mo>
+                <mi mathvariant="normal">N</mi>
+            </math>
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+                <msub>
+                    <mi>&#x3c6;</mi>
+                    <mn>1</mn>
+                </msub>
+                <mo>=</mo>
+                <mn>24</mn>
+                <mo>&#xb0;</mo>
+                <mn>00</mn>
+                <mo>'</mo>
+                <mn>00</mn>
+                <mo>&quot;</mo>
+                <mi mathvariant="normal">N</mi>
+            </math>
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+                <msub>
+                    <mi>&#x3c6;</mi>
+                    <mn>2</mn>
+                </msub>
+                <mo>=</mo>
+                <mn>48</mn>
+                <mo>&#xb0;</mo>
+                <mn>00</mn>
+                <mo>'</mo>
+                <mn>00</mn>
+                <mo>&quot;</mo>
+                <mi mathvariant="normal">N</mi>
+            </math>
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+                <msub>
+                    <mi mathvariant="normal">&#x3bb;</mi>
+                    <mn>0</mn>
+                </msub>
+                <mo>=</mo>
+                <mn>104</mn>
+                <mo>&#xb0;</mo>
+                <mn>30</mn>
+                <mo>'</mo>
+                <mn>00</mn>
+                <mo>&quot;</mo>
+                <mi mathvariant="normal">E</mi>
+            </math>
+            <a href="#fnref12">↩︎</a>
+        </li>
+    </ol>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,233 @@
+{
+  "version": 1,
+  "category": "ghsl",
+  "count": 2990,
+  "idField": "CODE",
+  "idsFile": "../../core/ids.json",
+  "namesFile": "../../core/names.json",
+  "nameField": "NAME",
+  "stringsFile": "strings.json",
+  "numericProperties": [
+    "GHSL_POP",
+    "GHSL_POP_DENS",
+    "GHSL_URB",
+    "GHSL_POP_30",
+    "GHSL_POP_23",
+    "GHSL_POP_22",
+    "GHSL_POP_21",
+    "GHSL_POP_13",
+    "GHSL_POP_12",
+    "GHSL_POP_11",
+    "GHSL_POP_10",
+    "GHSL_VAR"
+  ],
+  "stringProperties": [],
+  "packs": {
+    "pack-default": {
+      "file": "pack-default.bin",
+      "byteLength": 11960,
+      "metrics": [
+        "GHSL_POP"
+      ]
+    },
+    "pack-0": {
+      "file": "pack-0.bin",
+      "byteLength": 131560,
+      "metrics": [
+        "GHSL_POP_DENS",
+        "GHSL_URB",
+        "GHSL_POP_30",
+        "GHSL_POP_23",
+        "GHSL_POP_22",
+        "GHSL_POP_21",
+        "GHSL_POP_13",
+        "GHSL_POP_12",
+        "GHSL_POP_11",
+        "GHSL_POP_10",
+        "GHSL_VAR"
+      ]
+    }
+  },
+  "metrics": {
+    "GHSL_POP": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-default",
+      "offset": 0,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 8797461,
+        "mean": 468405.483277592,
+        "median": 364303,
+        "count": 2990,
+        "missingCount": 0
+      }
+    },
+    "GHSL_POP_DENS": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 0,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 42965.7,
+        "mean": 1053.860702341136,
+        "median": 305.20001220703125,
+        "count": 2990,
+        "missingCount": 0
+      }
+    },
+    "GHSL_URB": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 11960,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 1,
+        "mean": 0.7520349397590353,
+        "median": 0.8069000244140625,
+        "count": 2988,
+        "missingCount": 2
+      }
+    },
+    "GHSL_POP_30": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 23920,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 1,
+        "mean": 0.33477329317269067,
+        "median": 0.24699999392032623,
+        "count": 2988,
+        "missingCount": 2
+      }
+    },
+    "GHSL_POP_23": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 35880,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.8536,
+        "mean": 0.16470783132530087,
+        "median": 0.13950000703334808,
+        "count": 2988,
+        "missingCount": 2
+      }
+    },
+    "GHSL_POP_22": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 47840,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.5983,
+        "mean": 0.0462757697456492,
+        "median": 0.03700000047683716,
+        "count": 2988,
+        "missingCount": 2
+      }
+    },
+    "GHSL_POP_21": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 59800,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.9631,
+        "mean": 0.206279384203481,
+        "median": 0.18359999358654022,
+        "count": 2988,
+        "missingCount": 2
+      }
+    },
+    "GHSL_POP_13": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 71760,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.9434,
+        "mean": 0.10425354752342691,
+        "median": 0.05559999868273735,
+        "count": 2988,
+        "missingCount": 2
+      }
+    },
+    "GHSL_POP_12": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 83720,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 1,
+        "mean": 0.1241451472556893,
+        "median": 0.10719999670982361,
+        "count": 2988,
+        "missingCount": 2
+      }
+    },
+    "GHSL_POP_11": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 95680,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.5591,
+        "mean": 0.01956589692101738,
+        "median": 0.011099999770522118,
+        "count": 2988,
+        "missingCount": 2
+      }
+    },
+    "GHSL_POP_10": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 107640,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0,
+        "mean": 0,
+        "median": 0,
+        "count": 2988,
+        "missingCount": 2
+      }
+    },
+    "GHSL_VAR": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 119600,
+      "length": 2990,
+      "stats": {
+        "min": -1,
+        "max": 59.4444,
+        "mean": 0.06006122448979593,
+        "median": 0.02710000053048134,
+        "count": 2989,
+        "missingCount": 1
+      }
+    }
+  }
+}

@@ -1,0 +1,931 @@
+{
+  "ghsl": {
+    "label": "GHSL",
+    "metricsOrder": [
+      "ghsl_total",
+      "ghsl_density",
+      "ghsl_urbanization",
+      "ghsl_class_sum",
+      "ghsl_var"
+    ],
+    "metrics": {
+      "ghsl_total": {
+        "kind": "uni",
+        "label": "Population",
+        "description": "Total population count, GHSL",
+        "field": "GHSL_POP",
+        "settings": {
+          "type": "numeric",
+          "scale": "pow",
+          "exponent": "2/9",
+          "legendSteps": 7,
+          "domain": [10000, 3000000],
+          "format": { "specifier": ".4~s" },
+          "interpolation": { "type": "named", "value": "viridis" }
+        }
+      },
+      "ghsl_density": {
+        "kind": "uni",
+        "label": "Population density",
+        "description": "Population per sq. km",
+        "field": "GHSL_POP_DENS",
+        "settings": {
+          "type": "numeric",
+          "scale": "pow",
+          "exponent": "1/6",
+          "legendSteps": 6,
+          "domain": [0, 50000],
+          "format": { "notation": "standard", "maximumFractionDigits": 2 },
+          "interpolation": { "type": "named", "value": "Magma" }
+        }
+      },
+      "ghsl_urbanization": {
+        "kind": "uni",
+        "label": "Urbanization rate",
+        "description": "Share of population classified as urban under UN DEGURBA",
+        "field": "GHSL_URB",
+        "settings": {
+          "type": "numeric",
+          "scale": "linear",
+          "percentage": true,
+          "percentageScale": "fraction",
+          "domain": [0, 1],
+          "legendSteps": 11,
+          "format": { "maximumFractionDigits": 1, "notation": "standard" },
+          "interpolation": { "type": "named", "value": "PRGn" }
+        }
+      },
+      "ghsl_class_sum": {
+        "kind": "uni",
+        "label": "Class sum",
+        "description": "Sum of selected DEGURBA portions",
+        "composite": {
+          "op": "sum",
+          "parts": [
+            "GHSL_POP_30",
+            "GHSL_POP_23",
+            "GHSL_POP_22",
+            "GHSL_POP_21",
+            "GHSL_POP_13",
+            "GHSL_POP_12",
+            "GHSL_POP_11",
+            "GHSL_POP_10"
+          ],
+          "default": ["GHSL_POP_30", "GHSL_POP_23"],
+          "label": "DEGURBA components"
+        },
+        "settings": {
+          "type": "numeric",
+          "percentage": true,
+          "percentageScale": "fraction",
+          "scale": "linear",
+          "domain": [0, 1],
+          "legendSteps": 11,
+          "format": { "maximumFractionDigits": 1, "notation": "standard" },
+          "interpolation": { "type": "named", "value": "Oranges" }
+        }
+      },
+      "ghsl_var": {
+        "kind": "uni",
+        "label": "Variance",
+        "description": "Variance to census data",
+        "field": "GHSL_VAR",
+        "settings": {
+          "type": "numeric",
+          "scale": "linear",
+          "percentage": true,
+          "percentageScale": "fraction",
+          "domain": [-0.5, 0.5],
+          "legendSteps": 11,
+          "format": { "maximumFractionDigits": 1, "notation": "standard" },
+          "interpolation": { "type": "named", "value": "BrBG" }
+        }
+      }
+    }
+  },
+  "population": {
+    "label": "Population",
+    "metricsOrder": [
+      "population",
+      "gender_ratio",
+      "ethnic_ratio",
+      "urbanization",
+      "registration_status"
+    ],
+    "metrics": {
+      "population": {
+        "kind": "uni",
+        "label": "Population",
+        "description": "Total population count",
+        "field": "POPU",
+        "settings": {
+          "type": "numeric",
+          "scale": "pow",
+          "exponent": "2/9",
+          "domain": [10000, 3000000],
+          "format": { "specifier": ".4~s" },
+          "interpolation": { "type": "named", "value": "viridis" }
+        }
+      },
+      "gender_ratio": {
+        "kind": "uni",
+        "label": "Gender ratio",
+        "description": "Women-to-men ratio where W = 100",
+        "field": "POPU_WM",
+        "settings": {
+          "type": "numeric",
+          "scale": "linear",
+          "legendSteps": 11,
+          "domain": [75, 125],
+          "format": { "maximumFractionDigits": 2, "notation": "standard" },
+          "interpolation": {
+            "piecewise": true,
+            "type": "rgb",
+            "value": ["blue", "white", "red"],
+            "gamma": 1.5
+          }
+        }
+      },
+      "ethnic_ratio": {
+        "kind": "uni",
+        "label": "Ethnic minority",
+        "description": "Ethnic minority population rate",
+        "field": "POPU_ETHNIC",
+        "settings": {
+          "type": "numeric",
+          "scale": "linear",
+          "percentage": true,
+          "domain": [0, 1],
+          "legendSteps": 11,
+          "format": { "maximumFractionDigits": 2, "notation": "standard" },
+          "interpolation": {
+            "type": "cubehelix",
+            "value": ["purple", "orange"],
+            "gamma": 0.5
+          }
+        }
+      },
+      "urbanization": {
+        "kind": "uni",
+        "label": "Urbanization rate",
+        "description": "Urbanization rate on a township-level",
+        "field": "POPU_URB",
+        "settings": {
+          "type": "numeric",
+          "scale": "linear",
+          "percentage": true,
+          "domain": [0, 1],
+          "legendSteps": 11,
+          "format": { "maximumFractionDigits": 1, "notation": "standard" },
+          "interpolation": { "type": "named", "value": "PRGn" }
+        }
+      },
+      "registration_status": {
+        "kind": "uni",
+        "label": "Hukou reg. sum",
+        "description": "Sum of selected hukou registrations, outside township residence",
+        "composite": {
+          "op": "sum",
+          "parts": ["POPU_REG_C", "POPU_REG_P", "POPU_REG_O"],
+          "default": ["POPU_REG_C", "POPU_REG_P", "POPU_REG_O"],
+          "label": "C = Within county, P = Within prov., O = Outside prov."
+        },
+        "settings": {
+          "type": "numeric",
+          "percentage": true,
+          "percentageScale": "fraction",
+          "scale": "linear",
+          "domain": [0, 1],
+          "legendSteps": 11,
+          "format": { "maximumFractionDigits": 2, "notation": "standard" },
+          "interpolation": {
+            "type": "named",
+            "value": "Spectral"
+          }
+        }
+      }
+    }
+  },
+  "education": {
+    "label": "Education",
+    "metricsOrder": [
+      "literacy_m",
+      "literacy_w",
+      "literacy_mw",
+      "avg_years_m",
+      "avg_years_w",
+      "avg_years_mw"
+    ],
+    "metrics": {
+      "literacy_m": {
+        "kind": "uni",
+        "label": "Illiteracy rate (m)",
+        "description": "Male illiteracy rate",
+        "field": "EDUC_LITR_M",
+        "settings": {
+          "scale": "pow",
+          "exponent": "1/2",
+          "percentage": true,
+          "type": "numeric",
+          "legendSteps": 8,
+          "domain": [0, 0.35],
+          "format": { "maximumFractionDigits": 1, "notation": "standard" },
+          "interpolation": {
+            "type": "named",
+            "value": "PuRd"
+          }
+        }
+      },
+      "literacy_w": {
+        "kind": "uni",
+        "label": "Illiteracy rate (w)",
+        "description": "Female illiteracy rate",
+        "field": "EDUC_LITR_W",
+        "settings": {
+          "scale": "pow",
+          "exponent": "1/2",
+          "percentage": true,
+          "type": "numeric",
+          "legendSteps": 8,
+          "domain": [0, 0.35],
+          "format": { "maximumFractionDigits": 1, "notation": "standard" },
+          "interpolation": {
+            "type": "named",
+            "value": "PuRd"
+          }
+        }
+      },
+      "literacy_mw": {
+        "kind": "bivar",
+        "label": "Illiteracy: men/women",
+        "description": "Illiteracy rates, men (x) and women (y)",
+        "x": {
+          "metricId": "literacy_m",
+          "settings": {
+            "paletteSteps": 5,
+            "scale": "pow",
+            "exponent": "1/2"
+          }
+        },
+        "y": {
+          "metricId": "literacy_w",
+          "scale": "pow",
+          "settings": {
+            "paletteSteps": 5,
+            "scale": "pow",
+            "exponent": "1/2"
+          }
+        },
+        "method": {
+          "palette": [
+            ["#3070e8", "#3070cd", "#3070ac", "#307081", "#307031"],
+            ["#6290e8", "#6290cd", "#6290ac", "#629081", "#629031"],
+            ["#8faee8", "#8faecd", "#8faeac", "#8fae81", "#8fae31"],
+            ["#bccbe8", "#bccbcd", "#bccbac", "#bccb81", "#bccb31"],
+            ["#e8e8e8", "#e8e8cd", "#e8e8ac", "#e8e881", "#e8e831"]
+          ]
+        }
+      },
+      "avg_years_m": {
+        "kind": "uni",
+        "label": "Avg yrs. (m)",
+        "description": "Average years of education, men",
+        "field": "EDUC_AVGY_M",
+        "settings": {
+          "scale": "linear",
+          "type": "numeric",
+          "domain": [5, 15],
+          "legendSteps": 11,
+          "interpolation": {
+            "type": "named",
+            "value": "YlOrBr"
+          }
+        }
+      },
+      "avg_years_w": {
+        "kind": "uni",
+        "label": "Avg. yrs. (w)",
+        "description": "Average years of education, women",
+        "field": "EDUC_AVGY_W",
+        "settings": {
+          "scale": "linear",
+          "type": "numeric",
+          "domain": [5, 15],
+          "legendSteps": 11,
+          "interpolation": {
+            "type": "named",
+            "value": "YlOrBr"
+          }
+        }
+      },
+      "avg_years_mw": {
+        "kind": "bivar",
+        "label": "Education: yrs. men/women",
+        "description": "Average years of education, men (X) and women (Y)",
+        "x": {
+          "metricId": "avg_years_m",
+          "label": "Avg. yrs. (m)",
+          "settings": {
+            "paletteSteps": 5
+          }
+        },
+        "y": {
+          "metricId": "avg_years_w",
+          "label": "Avg. yrs. (w)",
+          "settings": {
+            "paletteSteps": 5
+          }
+        },
+        "method": {
+          "palette": [
+            ["#be64ac", "#be64ac", "#a664ac", "#8164ac", "#5a64ac"],
+            ["#c986bc", "#c886bc", "#a686bc", "#8186bc", "#5a86bc"],
+            ["#d3a7cb", "#c8a7cb", "#a6a7cb", "#81a7cb", "#5aa7c8"],
+            ["#dec8d9", "#c8c8d9", "#a6c8d9", "#81c8d1", "#5ac8c8"],
+            ["#e8e8e8", "#c8e1e1", "#a6d9d9", "#81d1d1", "#5ac8c8"]
+          ]
+        }
+      }
+    }
+  },
+  "ages": {
+    "label": "Ages",
+    "metricsOrder": [
+      "AGES_0-14",
+      "AGES_15-64",
+      "AGES_65P",
+      "AGES_W_15-49",
+      "AGES_sum"
+    ],
+    "metrics": {
+      "AGES_0-14": {
+        "kind": "uni",
+        "label": "Age 0-14",
+        "description": "Proportion of population aged 0 to 14, rate.",
+        "field": "AGES_0-14",
+        "settings": {
+          "scale": "linear",
+          "percentage": true,
+          "percentageScale": "fraction",
+          "type": "numeric",
+          "domain": [0, 1],
+          "binning": {
+            "method": "cluster",
+            "bins": 5
+          },
+          "format": { "maximumFractionDigits": 2, "notation": "standard" },
+          "interpolation": {
+            "type": "named",
+            "value": "RdPu"
+          }
+        }
+      },
+      "AGES_15-64": {
+        "kind": "uni",
+        "label": "Age 15-64",
+        "description": "Proportion of population aged 15 to 64, rate.",
+        "field": "AGES_15-64",
+        "settings": {
+          "scale": "linear",
+          "percentage": true,
+          "percentageScale": "fraction",
+          "type": "numeric",
+          "domain": [0, 1],
+          "binning": {
+            "method": "cluster",
+            "bins": 5
+          },
+          "format": { "maximumFractionDigits": 2, "notation": "standard" },
+          "interpolation": {
+            "type": "named",
+            "value": "RdPu"
+          }
+        }
+      },
+      "AGES_65P": {
+        "kind": "uni",
+        "label": "Age 65+",
+        "description": "Proportion of population aged 65 and above, rate.",
+        "field": "AGES_65P",
+        "settings": {
+          "scale": "linear",
+          "percentage": true,
+          "percentageScale": "fraction",
+          "type": "numeric",
+          "domain": [0, 1],
+          "binning": {
+            "method": "cluster",
+            "bins": 5
+          },
+          "format": { "maximumFractionDigits": 2, "notation": "standard" },
+          "interpolation": {
+            "type": "named",
+            "value": "RdPu"
+          }
+        }
+      },
+      "AGES_W_15-49": {
+        "kind": "uni",
+        "label": "Women 15-49",
+        "description": "Proportion of total population, women aged 15-49",
+        "field": "AGES_W_15-49",
+        "settings": {
+          "scale": "linear",
+          "percentage": true,
+          "percentageScale": "fraction",
+          "type": "numeric",
+          "domain": [0, 1],
+          "binning": {
+            "method": "cluster",
+            "bins": 5
+          },
+          "format": { "maximumFractionDigits": 2, "notation": "standard" },
+          "interpolation": {
+            "type": "named",
+            "value": "RdPu"
+          }
+        }
+      },
+      "AGES_sum": {
+        "kind": "uni",
+        "label": "Age sum",
+        "description": "Sum of selected age brackets, proportionate to total population",
+        "composite": {
+          "op": "sum",
+          "parts": [
+            "AGES_0",
+            "AGES_1-4",
+            "AGES_5-9",
+            "AGES_10-14",
+            "AGES_15-19",
+            "AGES_20-24",
+            "AGES_25-29",
+            "AGES_30-34",
+            "AGES_35-39",
+            "AGES_40-44",
+            "AGES_45-49",
+            "AGES_50-54",
+            "AGES_55-59",
+            "AGES_60-64",
+            "AGES_65-69",
+            "AGES_70-74",
+            "AGES_75-79",
+            "AGES_80-84",
+            "AGES_85P"
+          ],
+          "default": [
+            "AGES_25-29",
+            "AGES_30-34",
+            "AGES_35-39",
+            "AGES_40-44",
+            "AGES_45-49",
+            "AGES_50-54",
+            "AGES_55-59"
+          ],
+          "label": "Age brackets"
+        },
+        "settings": {
+          "type": "numeric",
+          "percentage": true,
+          "percentageScale": "fraction",
+          "scale": "linear",
+          "domain": [0, 1],
+          "binning": {
+            "method": "cluster",
+            "bins": 5
+          },
+          "format": { "maximumFractionDigits": 2, "notation": "standard" },
+          "interpolation": {
+            "type": "named",
+            "value": "Spectral"
+          }
+        }
+      }
+    }
+  },
+  "housing": {
+    "label": "Housing",
+    "metricsOrder": [
+      "HOUS_SMPP",
+      "HOUS_ROOM",
+      "HOUS_SAMP_WATR",
+      "HOUS_SAMP_KTCH",
+      "HOUS_SAMP_BATH",
+      "HOUS_SAMP_BDEL",
+      "HOUS_SAMP_HHVE",
+      "HOUS_src_sum"
+    ],
+    "metrics": {
+      "HOUS_SMPP": {
+        "kind": "uni",
+        "label": "Hous. size p.p.",
+        "description": "Average housing size, per person in sqm.",
+        "field": "HOUS_SMPP",
+        "settings": {
+          "scale": "linear",
+          "type": "numeric",
+          "binning": {
+            "method": "breakpoints",
+            "breakpoints": [35, 42, 50, 60]
+          },
+          "format": { "maximumFractionDigits": 2, "notation": "standard" },
+          "interpolation": {
+            "type": "named",
+            "value": "RdPu"
+          }
+        }
+      },
+      "HOUS_ROOM": {
+        "kind": "uni",
+        "label": "Rooms p. hhld.",
+        "description": "Average rooms, per household",
+        "field": "HOUS_ROOM",
+        "settings": {
+          "scale": "linear",
+          "type": "numeric",
+          "domain": [0, 5],
+          "binning": {
+            "method": "cluster",
+            "bins": 5
+          },
+          "format": { "maximumFractionDigits": 2, "notation": "standard" },
+          "interpolation": {
+            "type": "named",
+            "value": "RdPu"
+          }
+        }
+      },
+      "HOUS_SAMP_WATR": {
+        "kind": "uni",
+        "label": "Running water",
+        "description": "Households with running water, rate (sample)",
+        "field": "HOUS_SAMP_WATR",
+        "settings": {
+          "scale": "linear",
+          "type": "numeric",
+          "domain": [0, 1],
+          "legendSteps": 11,
+          "percentage": true,
+          "percentageScale": "fraction",
+          "binning": {
+            "method": "breakpoints",
+            "breakpoints": [0.35, 0.65, 0.82, 0.93]
+          },
+          "format": {
+            "maximumFractionDigits": 2,
+            "notation": "standard"
+          },
+          "interpolation": {
+            "type": "named",
+            "value": "YlGnBu"
+          }
+        }
+      },
+      "HOUS_SAMP_KTCH": {
+        "kind": "uni",
+        "label": "Indoor kitchen",
+        "description": "Households with indoor kitchens, rate (sample)",
+        "field": "HOUS_SAMP_KTCH",
+        "settings": {
+          "scale": "linear",
+          "type": "numeric",
+          "domain": [0, 1],
+          "legendSteps": 11,
+          "percentage": true,
+          "percentageScale": "fraction",
+          "binning": {
+            "method": "cluster",
+            "bins": 5
+          },
+          "format": {
+            "maximumFractionDigits": 2,
+            "notation": "standard"
+          },
+          "interpolation": {
+            "type": "named",
+            "value": "BuPu"
+          }
+        }
+      },
+      "HOUS_SAMP_BATH": {
+        "kind": "uni",
+        "label": "Indoor WC",
+        "description": "Households with indoor WC, rate (sample)",
+        "field": "HOUS_SAMP_BATH",
+        "settings": {
+          "scale": "linear",
+          "type": "numeric",
+          "domain": [0, 1],
+          "legendSteps": 11,
+          "percentage": true,
+          "percentageScale": "fraction",
+          "binning": {
+            "method": "cluster",
+            "bins": 5
+          },
+          "format": {
+            "maximumFractionDigits": 2,
+            "notation": "standard"
+          },
+          "interpolation": {
+            "type": "named",
+            "value": "BuPu"
+          }
+        }
+      },
+      "HOUS_SAMP_BDEL": {
+        "kind": "uni",
+        "label": "Elevator access",
+        "description": "Households with building elevators, rate (sample)",
+        "field": "HOUS_SAMP_BDEL",
+        "settings": {
+          "scale": "linear",
+          "type": "numeric",
+          "domain": [0, 1],
+          "legendSteps": 11,
+          "percentage": true,
+          "percentageScale": "fraction",
+          "binning": {
+            "method": "cluster",
+            "bins": 5
+          },
+          "format": {
+            "maximumFractionDigits": 2,
+            "notation": "standard"
+          },
+          "interpolation": {
+            "type": "named",
+            "value": "BuPu"
+          }
+        }
+      },
+      "HOUS_SAMP_HHVE": {
+        "kind": "uni",
+        "label": "Vehicle ownership",
+        "description": "Households with indoor kitchens, rate (sample)",
+        "field": "HOUS_SAMP_HHVE",
+        "settings": {
+          "scale": "linear",
+          "type": "numeric",
+          "domain": [0, 1],
+          "legendSteps": 11,
+          "percentage": true,
+          "percentageScale": "fraction",
+          "binning": {
+            "method": "cluster",
+            "bins": 5
+          },
+          "format": {
+            "maximumFractionDigits": 2,
+            "notation": "standard"
+          },
+          "interpolation": {
+            "type": "named",
+            "value": "BuPu"
+          }
+        }
+      },
+      "HOUS_src_sum": {
+        "kind": "uni",
+        "label": "Source sum",
+        "description": "Sum of selected housing sources",
+        "composite": {
+          "op": "sum",
+          "parts": [
+            "HOUS_SAMP_LEAS",
+            "HOUS_SAMP_SELF",
+            "HOUS_SAMP_BUY",
+            "HOUS_SAMP_INHE",
+            "HOUS_SAMP_OTHR"
+          ],
+          "default": ["HOUS_SAMP_LEAS"],
+          "label": "Housing sources"
+        },
+        "settings": {
+          "type": "numeric",
+          "percentage": true,
+          "percentageScale": "fraction",
+          "scale": "linear",
+          "domain": [0, 1],
+          "legendSteps": 11,
+          "format": {
+            "maximumFractionDigits": 1,
+            "notation": "standard"
+          },
+          "interpolation": {
+            "type": "cubehelix",
+            "piecewise": true,
+            "value": ["#ef476f", "#ffd166", "#06d6a0", "#118ab2"]
+          }
+        }
+      }
+    }
+  },
+  "family": {
+    "label": "Family",
+    "metricsOrder": [
+      "FMLY_UNMA",
+      "FMLY_UNMA_M",
+      "FMLY_UNMA_W",
+      "FMLY_CHLD_15-64W"
+    ],
+    "metrics": {
+      "FMLY_UNMA": {
+        "kind": "uni",
+        "label": "Unmarried",
+        "description": "Unmarried population ratio, aged 15 and above",
+        "field": "FMLY_UNMA",
+        "settings": {
+          "scale": "linear",
+          "type": "numeric",
+          "domain": [0, 1],
+          "percentage": true,
+          "percentageScale": "fraction",
+          "binning": {
+            "method": "cluster",
+            "bins": 5
+          },
+          "format": {
+            "maximumFractionDigits": 2,
+            "notation": "standard"
+          },
+          "interpolation": {
+            "type": "named",
+            "value": "BuPu"
+          }
+        }
+      },
+      "FMLY_UNMA_M": {
+        "kind": "uni",
+        "label": "Unmarried men",
+        "description": "Unmarried men ratio, aged 15 and above",
+        "field": "FMLY_UNMA_M",
+        "settings": {
+          "scale": "linear",
+          "percentage": true,
+          "type": "numeric",
+          "domain": [0, 1],
+          "format": { "maximumFractionDigits": 1, "notation": "standard" }
+        }
+      },
+      "FMLY_UNMA_W": {
+        "kind": "uni",
+        "label": "Unmarried women",
+        "description": "Unmarried women ratio, aged 15 and above",
+        "field": "FMLY_UNMA_W",
+        "settings": {
+          "scale": "linear",
+          "percentage": true,
+          "type": "numeric",
+          "domain": [0, 1],
+          "format": { "maximumFractionDigits": 1, "notation": "standard" }
+        }
+      },
+      "FMLY_CHLD_15-64W": {
+        "kind": "uni",
+        "label": "Childbirth",
+        "description": "Average surviving children, per women aged 15-64",
+        "field": "FMLY_CHLD_15-64W",
+        "settings": {
+          "scale": "linear",
+          "type": "numeric",
+          "binning": {
+            "method": "cluster",
+            "bins": 5
+          },
+          "format": {
+            "maximumFractionDigits": 2,
+            "notation": "standard"
+          },
+          "interpolation": {
+            "type": "named",
+            "value": "BuPu"
+          }
+        }
+      }
+    }
+  },
+  "households": {
+    "label": "Households",
+    "metricsOrder": [
+      "HHLD_R",
+      "HHLD_S",
+      "HHLD_1P",
+      "HHLD_gen_sum",
+      "HHLD_65",
+      "HHLD_65_sum"
+    ],
+    "metrics": {
+      "HHLD_R": {
+        "kind": "uni",
+        "label": "Household ratio",
+        "description": "Household population proportionate to total population, rate",
+        "field": "HHLD_R",
+        "settings": {
+          "scale": "linear",
+          "type": "numeric",
+          "domain": [0, 1],
+          "percentage": true,
+          "percentageScale": "fraction",
+          "binning": {
+            "method": "cluster",
+            "bins": 5
+          },
+          "format": {
+            "maximumFractionDigits": 2,
+            "notation": "standard"
+          },
+          "interpolation": {
+            "type": "named",
+            "value": "BuPu"
+          }
+        }
+      },
+      "HHLD_S": {
+        "kind": "uni",
+        "label": "Household size",
+        "description": "Average household size",
+        "field": "HHLD_S",
+        "settings": {
+          "scale": "linear",
+          "type": "numeric",
+          "domain": [1, 3],
+          "binning": {
+            "method": "cluster",
+            "bins": 5
+          },
+          "format": {
+            "maximumFractionDigits": 2,
+            "notation": "standard"
+          },
+          "interpolation": {
+            "type": "named",
+            "value": "BuPu"
+          }
+        }
+      },
+      "HHLD_1P": {
+        "kind": "uni",
+        "label": "1P hhld",
+        "description": "One-person households, ratio",
+        "field": "HHLD_1P",
+        "settings": {
+          "scale": "linear",
+          "type": "numeric",
+          "domain": [0, 1],
+          "percentage": true,
+          "percentageScale": "fraction",
+          "binning": {
+            "method": "cluster",
+            "bins": 5
+          },
+          "format": {
+            "maximumFractionDigits": 2,
+            "notation": "standard"
+          },
+          "interpolation": {
+            "type": "named",
+            "value": "BuPu"
+          }
+        }
+      },
+      "HHLD_gen_sum": {
+        "kind": "uni",
+        "label": "Generation sum",
+        "description": "Sum of generations, ratio",
+        "composite": {
+          "op": "sum",
+          "parts": [
+            "HHLD_1G",
+            "HHLD_2G",
+            "HHLD_3G",
+            "HHLD_4GP"
+          ],
+          "default": [
+            "HHLD_2G"
+          ],
+          "label": "Household generation"
+        },
+        "settings": {
+          "scale": "linear",
+          "type": "numeric",
+          "domain": [0, 1],
+          "percentage": true,
+          "percentageScale": "fraction",
+          "binning": {
+            "method": "cluster",
+            "bins": 5
+          },
+          "format": {
+            "maximumFractionDigits": 2,
+            "notation": "standard"
+          },
+          "interpolation": {
+            "type": "named",
+            "value": "BuPu"
+          }
+        }
+      }
+    }
+  }
+}
