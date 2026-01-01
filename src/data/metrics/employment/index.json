@@ -1,0 +1,159 @@
+{
+  "version": 1,
+  "category": "employment",
+  "count": 2990,
+  "idField": "CODE",
+  "idsFile": "ids.json",
+  "namesFile": null,
+  "nameField": "NAME",
+  "stringsFile": "strings.json",
+  "numericProperties": [
+    "EMPL_OCCU",
+    "EMPL_PROF_KMAN",
+    "EMPL_PROF_TECP",
+    "EMPL_PROF_OFCE",
+    "EMPL_PROF_SRVC",
+    "EMPL_PROF_AGHU",
+    "EMPL_PROF_MANU",
+    "EMPL_PROF_OTHR"
+  ],
+  "stringProperties": [],
+  "packs": {
+    "pack-0": {
+      "file": "pack-0.bin",
+      "byteLength": 95680,
+      "metrics": [
+        "EMPL_OCCU",
+        "EMPL_PROF_KMAN",
+        "EMPL_PROF_TECP",
+        "EMPL_PROF_OFCE",
+        "EMPL_PROF_SRVC",
+        "EMPL_PROF_AGHU",
+        "EMPL_PROF_MANU",
+        "EMPL_PROF_OTHR"
+      ]
+    }
+  },
+  "metrics": {
+    "EMPL_OCCU": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 0,
+      "length": 2990,
+      "stats": {
+        "min": 0.0413,
+        "max": 0.9615,
+        "mean": 0.5662922638981921,
+        "median": 0.5662000179290771,
+        "count": 2986,
+        "missingCount": 4
+      }
+    },
+    "EMPL_PROF_KMAN": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 11960,
+      "length": 2990,
+      "stats": {
+        "min": 0.0003,
+        "max": 0.1063,
+        "mean": 0.019867448091091786,
+        "median": 0.01600000075995922,
+        "count": 2986,
+        "missingCount": 4
+      }
+    },
+    "EMPL_PROF_TECP": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 23920,
+      "length": 2990,
+      "stats": {
+        "min": 0.022,
+        "max": 0.326,
+        "mean": 0.09801644340254512,
+        "median": 0.08340000361204147,
+        "count": 2986,
+        "missingCount": 4
+      }
+    },
+    "EMPL_PROF_OFCE": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 35880,
+      "length": 2990,
+      "stats": {
+        "min": 0.0112,
+        "max": 0.467,
+        "mean": 0.07422645679839264,
+        "median": 0.06159999966621399,
+        "count": 2986,
+        "missingCount": 4
+      }
+    },
+    "EMPL_PROF_SRVC": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 47840,
+      "length": 2990,
+      "stats": {
+        "min": 0.0467,
+        "max": 0.6209,
+        "mean": 0.31567799732082996,
+        "median": 0.30809998512268066,
+        "count": 2986,
+        "missingCount": 4
+      }
+    },
+    "EMPL_PROF_AGHU": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 59800,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.8596,
+        "mean": 0.25695569323509726,
+        "median": 0.24609999358654022,
+        "count": 2986,
+        "missingCount": 4
+      }
+    },
+    "EMPL_PROF_MANU": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 71760,
+      "length": 2990,
+      "stats": {
+        "min": 0.0028,
+        "max": 0.7022,
+        "mean": 0.23268847957133232,
+        "median": 0.2280000001192093,
+        "count": 2986,
+        "missingCount": 4
+      }
+    },
+    "EMPL_PROF_OTHR": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 83720,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.0608,
+        "mean": 0.002571064969859354,
+        "median": 0.0012000000569969416,
+        "count": 2986,
+        "missingCount": 4
+      }
+    }
+  }
+}

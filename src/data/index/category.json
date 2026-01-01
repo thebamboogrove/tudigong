@@ -991,5 +991,71 @@
         }
       }
     }
+  },
+  "employment": {
+    "label": "Employment",
+    "metricsOrder": ["EMPL_OCCU", "EMPL_PROF_sum"],
+    "metrics": {
+      "EMPL_OCCU": {
+        "kind": "uni",
+        "label": "Employment ratio",
+        "description": "Employment ratio, aged 16 and above (sample)",
+        "field": "EMPL_OCCU",
+        "settings": {
+          "scale": "linear",
+          "type": "numeric",
+          "domain": [0, 1],
+          "percentage": true,
+          "percentageScale": "fraction",
+          "binning": {
+            "method": "cluster",
+            "bins": 5
+          },
+          "format": {
+            "maximumFractionDigits": 2,
+            "notation": "standard"
+          },
+          "interpolation": {
+            "type": "named",
+            "value": "BuPu"
+          }
+        }
+      },
+      "EMPL_PROF_sum": {
+        "kind": "uni",
+        "label": "Profession sum",
+        "description": "Sum of selected professions, ratio of employed (sample)",
+        "composite": {
+          "op": "sum",
+          "parts": [
+            "EMPL_PROF_KMAN",
+            "EMPL_PROF_TECP",
+            "EMPL_PROF_OFCE",
+            "EMPL_PROF_SRVC",
+            "EMPL_PROF_AGHU",
+            "EMPL_PROF_MANU",
+            "EMPL_PROF_OTHR"
+          ],
+          "default": ["EMPL_PROF_TECP", "EMPL_PROF_OFCE"],
+          "label": "Profession categories"
+        },
+        "settings": {
+          "type": "numeric",
+          "percentage": true,
+          "percentageScale": "fraction",
+          "scale": "linear",
+          "domain": [0, 1],
+          "binning": {
+            "method": "cluster",
+            "bins": 5
+          },
+          "format": { "maximumFractionDigits": 2, "notation": "standard" },
+          "interpolation": {
+            "type": "named",
+            "value": "Spectral"
+          }
+        }
+      }
+    }
   }
 }
