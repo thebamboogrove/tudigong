@@ -5,338 +5,6 @@ import { GeoJsonLayer, PathLayer, PolygonLayer } from '@deck.gl/layers';
 import { PathStyleExtension } from '@deck.gl/extensions';
 import { feature as topojsonFeature, mesh as topojsonMesh } from 'topojson-client';
 
-
-class RangeFilterControlElement extends HTMLElement {
-    constructor() {
-        super();
-        this._configured = false;
-
-        this.onChange = () => {};
-        this.formatValue = v => v;
-        this.toDisplay = v => v;
-        this.fromDisplay = v => v;
-
-        this.stats = null;
-        this.settings = null;
-        this.scaleObj = null;
-        this.normalizeValue = null;
-
-        this.domain = { min: 0, max: 1 };
-        this.hasBelowDomain = false;
-        this.hasAboveDomain = false;
-
-        this.dom = null;
-        this._handlers = null;
-        this._axisCanvas = null;
-        this._axisLabels = null;
-    }
-
-    connectedCallback() {
-        if (this._configured) return;
-
-        const tpl = document.getElementById('range-filter-template');
-        if (!tpl) throw new Error('#range-filter-template template missing');
-
-        this.replaceChildren(tpl.content.cloneNode(true));
-
-        const root = this;
-        const host = root.querySelector('.range-filter-block');
-        this.dom = {
-            host,
-            label: root.querySelector('.range-filter-label'),
-            range: root.querySelector('.dual-range'),
-            minPct: root.querySelector('.thumb-min'),
-            maxPct: root.querySelector('.thumb-max'),
-            minInput: root.querySelector('.input-min'),
-            maxInput: root.querySelector('.input-max'),
-            valDisplay: root.querySelector('.filter-value-display'),
-            axis: root.querySelector('.metric-axis')
-        };
-
-        this.#attachEvents();
-        this._configured = true;
-    }
-
-    setConfig(options = {}) {
-        this.onChange = options.onChange || (() => {});
-        this.formatValue = options.formatValue || (v => v);
-        this.toDisplay = options.toDisplay || (v => v);
-        this.fromDisplay = options.fromDisplay || (v => v);
-
-        const label = options.label || '';
-        if (this.dom?.label) {
-            this.dom.label.textContent = label;
-            this.dom.label.title = options.description || '';
-            this.dom.label.style.display = label ? '' : 'none';
-        }
-    }
-
-    update(stats, settings, currentRange, normalizeValue) {
-        this.stats = stats;
-        this.settings = settings;
-        this.scaleObj = normalizeValue?.scale;
-        this.normalizeValue = normalizeValue;
-
-        const rawDomain = (this.scaleObj && typeof this.scaleObj.domain === 'function')
-            ? this.scaleObj.domain()
-            : [stats.min, stats.max];
-
-        let dmin = Number(rawDomain?.[0]);
-        let dmax = Number(rawDomain?.[rawDomain.length - 1]);
-        if (!Number.isFinite(dmin)) dmin = stats.min;
-        if (!Number.isFinite(dmax)) dmax = stats.max;
-        if (dmin > dmax) [dmin, dmax] = [dmax, dmin];
-
-        this.domain = { min: dmin, max: dmax };
-
-        const eps = (Number.isFinite(stats?.max) && Number.isFinite(stats?.min))
-            ? Math.max(1e-12, (stats.max - stats.min) * 1e-9)
-            : 1e-12;
-        this.hasBelowDomain = Number.isFinite(stats?.min) && (stats.min < dmin - eps);
-        this.hasAboveDomain = Number.isFinite(stats?.max) && (stats.max > dmax + eps);
-
-        this.currentRange = currentRange || { min: dmin, max: dmax };
-
-        const tMin = this.#tOf(this.currentRange.min);
-        const tMax = this.#tOf(this.currentRange.max);
-
-        this.dom.minPct.value = Math.round(tMin * 100);
-        this.dom.maxPct.value = Math.round(tMax * 100);
-
-        this.dom.minInput.value = this.#roundForInput(this.toDisplay(this.currentRange.min));
-        this.dom.maxInput.value = this.#roundForInput(this.toDisplay(this.currentRange.max));
-
-        this.#renderAxis(dmin, dmax);
-        this.#updateVisuals(tMin, tMax);
-    }
-
-    #attachEvents() {
-        const { minPct, maxPct, minInput, maxInput } = this.dom;
-
-        const commitRange = (ta, tb) => {
-            const lo = Math.min(ta, tb);
-            const hi = Math.max(ta, tb);
-
-            const vMinInDomain = this.#vOf(lo);
-            const vMaxInDomain = this.#vOf(hi);
-
-            const minBound = (lo <= 0 && this.hasBelowDomain) ? -Infinity : vMinInDomain;
-            const maxBound = (hi >= 1 && this.hasAboveDomain) ? Infinity : vMaxInDomain;
-
-            this.onChange(minBound, maxBound);
-        };
-
-        const onSliderInput = () => {
-            const ta = Math.min(minPct.value, maxPct.value) / 100;
-            const tb = Math.max(minPct.value, maxPct.value) / 100;
-            this.#updateVisuals(ta, tb);
-
-            const vMin = this.#vOf(ta);
-            const vMax = this.#vOf(tb);
-            minInput.value = this.#roundForInput(this.toDisplay(vMin));
-            maxInput.value = this.#roundForInput(this.toDisplay(vMax));
-        };
-
-        const onSliderCommit = () => {
-            const ta = Math.min(minPct.value, maxPct.value) / 100;
-            const tb = Math.max(minPct.value, maxPct.value) / 100;
-            commitRange(ta, tb);
-        };
-
-        minPct.addEventListener('input', onSliderInput);
-        maxPct.addEventListener('input', onSliderInput);
-        minPct.addEventListener('change', onSliderCommit);
-        maxPct.addEventListener('change', onSliderCommit);
-
-        const onTextCommit = () => {
-            let vMin = this.fromDisplay(this.#parseNumber(minInput.value));
-            let vMax = this.fromDisplay(this.#parseNumber(maxInput.value));
-
-            if (!Number.isFinite(vMin)) vMin = this.domain.min;
-            if (!Number.isFinite(vMax)) vMax = this.domain.max;
-            if (vMin > vMax) [vMin, vMax] = [vMax, vMin];
-
-            const clampedMin = Math.max(this.domain.min, Math.min(this.domain.max, vMin));
-            const clampedMax = Math.max(this.domain.min, Math.min(this.domain.max, vMax));
-
-            const ta = this.#tOf(clampedMin);
-            const tb = this.#tOf(clampedMax);
-
-            this.dom.minPct.value = Math.round(ta * 100);
-            this.dom.maxPct.value = Math.round(tb * 100);
-            this.#updateVisuals(ta, tb);
-
-            const lo = Math.min(ta, tb);
-            const hi = Math.max(ta, tb);
-
-            const minBound = ((vMin <= this.domain.min || lo <= 0) && this.hasBelowDomain) ? -Infinity : clampedMin;
-            const maxBound = ((vMax >= this.domain.max || hi >= 1) && this.hasAboveDomain) ? Infinity : clampedMax;
-
-            this.onChange(minBound, maxBound);
-        };
-        minInput.addEventListener('change', onTextCommit);
-        maxInput.addEventListener('change', onTextCommit);
-        minInput.addEventListener('keydown', e => e.key === 'Enter' && onTextCommit());
-        maxInput.addEventListener('keydown', e => e.key === 'Enter' && onTextCommit());
-    }
-
-    #updateVisuals(ta, tb) {
-        const lo = Math.min(ta, tb);
-        const hi = Math.max(ta, tb);
-
-        this.dom.range.style.setProperty('--ta', lo);
-        this.dom.range.style.setProperty('--tb', hi);
-
-        const vMin = this.#vOf(lo);
-        const vMax = this.#vOf(hi);
-
-        if (this.dom.valDisplay) {
-            const left = (lo <= 0 && this.hasBelowDomain)
-                ? `≤ ${this.formatValue(this.domain.min)}`
-                : this.formatValue(vMin);
-
-            const right = (hi >= 1 && this.hasAboveDomain)
-                ? `≥ ${this.formatValue(this.domain.max)}`
-                : this.formatValue(vMax);
-
-            this.dom.valDisplay.textContent = `${left} – ${right}`;
-        }
-    }
-    #renderAxis(dmin, dmax) {
-
-        const axis = this.dom.axis;
-        if (!axis) {
-            return;
-        }
-
-        const dpr = window.devicePixelRatio || 1;
-        const cssW = Math.max(1, Math.round(axis.clientWidth || 220));
-        const cssH = Math.max(1, Math.round(axis.clientHeight || 14));
-
-        axis.style.position = axis.style.position || 'relative';
-
-        if (!this._axisCanvas) {
-            axis.replaceChildren();
-
-            const canvas = document.createElement('canvas');
-            canvas.style.position = 'absolute';
-            canvas.style.left = '0';
-            canvas.style.top = '0';
-            axis.appendChild(canvas);
-
-            const minLabel = document.createElement('div');
-            minLabel.className = 'tick-label';
-            axis.appendChild(minLabel);
-
-            const maxLabel = document.createElement('div');
-            maxLabel.className = 'tick-label';
-            axis.appendChild(maxLabel);
-
-            this._axisCanvas = canvas;
-            this._axisLabels = { min: minLabel, max: maxLabel };
-        }
-
-        const canvas = this._axisCanvas;
-        canvas.style.width = `${cssW}px`;
-        canvas.style.height = `${cssH}px`;
-        canvas.width = Math.max(1, Math.round(cssW * dpr));
-        canvas.height = Math.max(1, Math.round(cssH * dpr));
-
-        const ctx = canvas.getContext('2d');
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-        const crisp = (x) => (Math.round(x * dpr) + 0.5) / dpr;
-
-        const majorCount = Math.max(2, Number(this.settings?.legendSteps || 6));
-        let ticks = d3.range(majorCount).map(i => dmin + (i / (majorCount - 1)) * (dmax - dmin));
-        ticks[0] = dmin;
-        ticks[ticks.length - 1] = dmax;
-        ticks = ticks.map(Number).filter(Number.isFinite);
-
-        // baseline
-        const y0 = crisp(2);
-        ctx.strokeStyle = 'rgba(0,0,0,0.35)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(0, y0);
-        ctx.lineTo(cssW, y0);
-        ctx.stroke();
-
-        // tick marks
-        const tickH = 6;
-        ctx.strokeStyle = 'rgba(0,0,0,0.55)';
-        ctx.beginPath();
-        ticks.forEach((v) => {
-            const t = this.#tOf(v);
-            if (t < 0 || t > 1) return;
-            const x = crisp(t * (cssW - 1));
-            ctx.moveTo(x, y0);
-            ctx.lineTo(x, y0 + tickH);
-        });
-        ctx.stroke();
-
-        // labels (endpoints only) in DOM
-        const eps = (Number.isFinite(this.stats?.max) && Number.isFinite(this.stats?.min))
-            ? Math.max(1e-12, (this.stats.max - this.stats.min) * 1e-9)
-            : 1e-12;
-        const hasBelowDomain = Number.isFinite(this.stats?.min) && (this.stats.min < dmin - eps);
-        const hasAboveDomain = Number.isFinite(this.stats?.max) && (this.stats.max > dmax + eps);
-
-        const minLabel = this._axisLabels?.min;
-        const maxLabel = this._axisLabels?.max;
-        if (minLabel) {
-            minLabel.style.left = '0%';
-            minLabel.textContent = hasBelowDomain ? `≤ ${this.formatValue(dmin)}` : this.formatValue(dmin);
-        }
-        if (maxLabel) {
-            maxLabel.style.left = '100%';
-            maxLabel.textContent = hasAboveDomain ? `≥ ${this.formatValue(dmax)}` : this.formatValue(dmax);
-        }
-    }
-
-    #tOf(v) {
-        if (!this.normalizeValue) return 0;
-        return Math.max(0, Math.min(1, this.normalizeValue(Number(v))));
-    }
-
-    #vOf(t) {
-        const tClamped = Math.max(0, Math.min(1, t));
-        if (this.scaleObj && typeof this.scaleObj.invert === 'function') {
-            const rng = this.scaleObj.range();
-            const r0 = rng[0], r1 = rng[rng.length - 1];
-            const valInRange = r0 + tClamped * (r1 - r0);
-            return this.scaleObj.invert(valInRange);
-        }
-        return this.domain.min + tClamped * (this.domain.max - this.domain.min);
-    }
-
-    #parseNumber(raw) {
-        if (raw == null) return NaN;
-        let s = String(raw).trim().replace(/,/g, '');
-        if (s === '') return NaN;
-        if (s.endsWith('%')) s = s.slice(0, -1).trim();
-        const m = s.match(/^(-?\d*\.?\d*)([kKmMbBtT])$/i);
-        if (m) {
-            const val = parseFloat(m[1]);
-            const unit = m[2].toLowerCase();
-            const mult = { k: 1e3, m: 1e6, b: 1e9, t: 1e12 }[unit] || 1;
-            return val * mult;
-        }
-        return Number(s);
-    }
-
-    #roundForInput(x) {
-        if (!Number.isFinite(x)) return '';
-        const abs = Math.abs(x);
-        if (abs === 0) return '0';
-        if (abs < 0.001) return x.toExponential(2);
-        if (abs > 10000) return Math.round(x);
-        return parseFloat(x.toPrecision(4));
-    }
-}
-
-customElements.define('range-filter-control', RangeFilterControlElement);
-
 class BoundaryManager {
     constructor() {
         this.boundaries = null;
@@ -842,6 +510,8 @@ class MapRenderer {
         this.bivar = null;
         this.bivarValuesX = null;
         this.bivarValuesY = null;
+        this.bivarData = null;
+        this.bivarCfg = null;
 
         this.tooltip = document.getElementById('tooltip');
         this.filterRange = null;
@@ -1476,10 +1146,14 @@ class MapRenderer {
     }
 
 
-    updateBivariateLayers(features, data, bivar, cfg, filters) {
+    updateBivariateLayers(features, dataByAxis, bivar, cfgByAxis, filters) {
 
         this.bivar = bivar;
-        this.currentData = data;
+        this.bivarData = dataByAxis || null;
+        this.bivarCfg = cfgByAxis || null;
+        if (!this.currentData) {
+            this.currentData = dataByAxis?.x || dataByAxis?.y || null;
+        }
         this.currentMetricId = null;
         this.currentMetricLabel = bivar?.label || null;
         this.currentMetricDescription = bivar?.description || null;
@@ -1487,16 +1161,21 @@ class MapRenderer {
         this.bivarFilters = filters || { x: null, y: null };
         this.currentMetric = null; // clear
 
-        if (!this.bivarValuesX || this.bivarKey !== bivar.key) {
-            this.bivarValuesX = features.map(f => app.dataManager.getFeatureValueByFeature(data, f, bivar.x.unit));
-            this.bivarValuesY = features.map(f => app.dataManager.getFeatureValueByFeature(data, f, bivar.y.unit));
-            this.bivarKey = bivar.key;
+        const xData = dataByAxis?.x || this.currentData;
+        const yData = dataByAxis?.y || this.currentData;
+        const key = `${bivar.key}::${bivar?.x?.category || ''}::${bivar?.y?.category || ''}`;
+        if (!this.bivarValuesX || !this.bivarValuesY || this.bivarKey !== key) {
+            this.bivarValuesX = features.map(f => app.dataManager.getFeatureValueByFeature(xData, f, bivar.x.unit));
+            this.bivarValuesY = features.map(f => app.dataManager.getFeatureValueByFeature(yData, f, bivar.y.unit));
+            this.bivarKey = key;
         }
 
-        const xStats = app.dataManager.getPropertyStats(data, bivar.x.unit);
-        const yStats = app.dataManager.getPropertyStats(data, bivar.y.unit);
-        const xSet = { ...(bivar?.x?.settings || (cfg.metrics && cfg.metrics[bivar.x.metricId]?.settings) || {}) };
-        const ySet = { ...(bivar?.y?.settings || (cfg.metrics && cfg.metrics[bivar.y.metricId]?.settings) || {}) };
+        const xStats = app.dataManager.getPropertyStats(xData, bivar.x.unit);
+        const yStats = app.dataManager.getPropertyStats(yData, bivar.y.unit);
+        const xCfg = cfgByAxis?.x || null;
+        const yCfg = cfgByAxis?.y || null;
+        const xSet = { ...(bivar?.x?.settings || (xCfg?.metrics && xCfg.metrics[bivar.x.metricId]?.settings) || {}) };
+        const ySet = { ...(bivar?.y?.settings || (yCfg?.metrics && yCfg.metrics[bivar.y.metricId]?.settings) || {}) };
         if (!xSet.interpolation) xSet.interpolation = { type: 'named', value: 'Blues' };
         if (!ySet.interpolation) ySet.interpolation = { type: 'named', value: 'Oranges' };
 
@@ -2386,8 +2065,10 @@ class MapRenderer {
 
         if (this.bivar) {
             clone.querySelector('.tooltip-metric').textContent = this.bivar.label || 'Bivariate';
-            const vx = app.dataManager.getFeatureValueByFeature(this.currentData, feature, this.bivar.x.unit);
-            const vy = app.dataManager.getFeatureValueByFeature(this.currentData, feature, this.bivar.y.unit);
+            const xData = this.bivarData?.x || this.currentData;
+            const yData = this.bivarData?.y || this.currentData;
+            const vx = app.dataManager.getFeatureValueByFeature(xData, feature, this.bivar.x.unit);
+            const vy = app.dataManager.getFeatureValueByFeature(yData, feature, this.bivar.y.unit);
             clone.querySelector('.tooltip-value').textContent = `${this.formatValue(vx, this.bivar.x.settings)} | ${this.formatValue(vy, this.bivar.y.settings)}`;
         }
         else if (this.currentMetric) {
@@ -2630,25 +2311,26 @@ class ChoroplethApp {
                 return {
                     metricId: metricKey,
                     label: axis.label || axis.valueLabel || fallbackLabel || null,
-                    settings: axis.settings || null
+                    settings: axis.settings || null,
+                    category: axis.category || axis.sourceCategory || axis.cat || null
                 };
             }
             return { metricId: null, label: fallbackLabel || null };
         };
 
-        const getMetric = (id) => cfg?.metrics?.[id] || null;
-        const resolveField = async (id) => {
-            const m = getMetric(id);
+        const getMetric = (id, categoryCfg) => categoryCfg?.metrics?.[id] || null;
+        const resolveField = async (id, category, categoryCfg, dataRef) => {
+            const m = getMetric(id, categoryCfg);
             if (!m) return null;
             if (typeof m.field === 'string') {
-                await this.dataManager.ensureMetricsLoaded(this.currentCategory, [m.field], this.currentData);
+                await this.dataManager.ensureMetricsLoaded(category, [m.field], dataRef);
                 return m.field;
             }
-            if (m.composite && this.currentData) {
-                const selection = this.getCompositeSelectionSet(id, m.composite);
+            if (m.composite && dataRef) {
+                const selection = this.getCompositeSelectionSet(id, m.composite, category);
                 const parts = (m.composite.parts || []).filter(p => selection.has(p));
-                await this.dataManager.ensureMetricsLoaded(this.currentCategory, parts, this.currentData);
-                const composite = this.dataManager.getCompositeBuffer(this.currentCategory, id, m.composite, parts, this.currentData);
+                await this.dataManager.ensureMetricsLoaded(category, parts, dataRef);
+                const composite = this.dataManager.getCompositeBuffer(category, id, m.composite, parts, dataRef);
                 return composite?.key || null;
             }
             return null;
@@ -2657,10 +2339,20 @@ class ChoroplethApp {
         const xAxis = normalizeAxis(def.x, def.xLabel);
         const yAxis = normalizeAxis(def.y, def.yLabel);
 
-        const xMetric = getMetric(xAxis.metricId);
-        const yMetric = getMetric(yAxis.metricId);
-        const xUnit = await resolveField(xAxis.metricId);
-        const yUnit = await resolveField(yAxis.metricId);
+        const xCategory = xAxis.category || this.currentCategory;
+        const yCategory = yAxis.category || this.currentCategory;
+        const xCfg = this.dataManager.getCategoryConfig(xCategory) || {};
+        const yCfg = this.dataManager.getCategoryConfig(yCategory) || {};
+
+        const [xData, yData] = await Promise.all([
+            this.dataManager.loadCategoryData(xCategory),
+            this.dataManager.loadCategoryData(yCategory)
+        ]);
+
+        const xMetric = getMetric(xAxis.metricId, xCfg);
+        const yMetric = getMetric(yAxis.metricId, yCfg);
+        const xUnit = await resolveField(xAxis.metricId, xCategory, xCfg, xData);
+        const yUnit = await resolveField(yAxis.metricId, yCategory, yCfg, yData);
         if (!xMetric || !yMetric || !xUnit || !yUnit) {
             return;
         }
@@ -2672,17 +2364,29 @@ class ChoroplethApp {
             key: metricId,
             label: def.label || metricId,
             description: def.description || null,
-            x: { metricId: xAxis.metricId, metric: xAxis.label || xMetric.label || xAxis.metricId, unit: xUnit, settings: xSettings },
-            y: { metricId: yAxis.metricId, metric: yAxis.label || yMetric.label || yAxis.metricId, unit: yUnit, settings: ySettings },
+            x: {
+                metricId: xAxis.metricId,
+                metric: xAxis.label || xMetric.label || xAxis.metricId,
+                unit: xUnit,
+                settings: xSettings,
+                category: xCategory
+            },
+            y: {
+                metricId: yAxis.metricId,
+                metric: yAxis.label || yMetric.label || yAxis.metricId,
+                unit: yUnit,
+                settings: ySettings,
+                category: yCategory
+            },
             method: def.method || {},
             blendMode: def.method?.blendMode || 'additive'
         };
 
         this.mapRenderer.updateBivariateLayers(
             this.boundaryManager.features,
-            this.currentData,
+            { x: xData, y: yData },
             bivar,
-            cfg,
+            { x: xCfg, y: yCfg },
             null
         );
 
@@ -2715,35 +2419,40 @@ class ChoroplethApp {
                 current[axis] = { min, max };
                 this.mapRenderer.updateBivariateLayers(
                     this.boundaryManager.features,
-                    this.currentData,
+                    this.mapRenderer.bivarData,
                     this.mapRenderer.bivar,
-                    cfg,
+                    this.mapRenderer.bivarCfg,
                     current
                 );
             };
 
-            const statsX = this.dataManager.getPropertyStats(this.currentData, bivarDef.x.unit);
-            const setX = bivarDef.x.settings || (cfg.metrics && cfg.metrics[bivarDef.x.metricId]?.settings) || {};
+            const xData = this.mapRenderer.bivarData?.x || this.currentData;
+            const yData = this.mapRenderer.bivarData?.y || this.currentData;
+            const xCfg = this.mapRenderer.bivarCfg?.x || cfg;
+            const yCfg = this.mapRenderer.bivarCfg?.y || cfg;
+
+            const statsX = this.dataManager.getPropertyStats(xData, bivarDef.x.unit);
+            const setX = bivarDef.x.settings || (xCfg.metrics && xCfg.metrics[bivarDef.x.metricId]?.settings) || {};
             const normX = this.mapRenderer.buildScaler(statsX, setX);
             const xTx = this.mapRenderer.getDisplayTransform(setX, statsX);
 
             addRangeControl({
                 label: `X: ${bivarDef.x.metric}`,
-                description: cfg.metrics?.[bivarDef.x.metricId]?.description || '',
+                description: xCfg.metrics?.[bivarDef.x.metricId]?.description || '',
                 onChange: createHandler('x'),
                 formatValue: (v) => this.mapRenderer.formatValue(v, setX, statsX),
                 toDisplay: xTx.toDisplay,
                 fromDisplay: xTx.fromDisplay
             }).update(statsX, setX, null, normX);
 
-            const statsY = this.dataManager.getPropertyStats(this.currentData, bivarDef.y.unit);
-            const setY = bivarDef.y.settings || (cfg.metrics && cfg.metrics[bivarDef.y.metricId]?.settings) || {};
+            const statsY = this.dataManager.getPropertyStats(yData, bivarDef.y.unit);
+            const setY = bivarDef.y.settings || (yCfg.metrics && yCfg.metrics[bivarDef.y.metricId]?.settings) || {};
             const normY = this.mapRenderer.buildScaler(statsY, setY);
             const yTx = this.mapRenderer.getDisplayTransform(setY, statsY);
 
             addRangeControl({
                 label: `Y: ${bivarDef.y.metric}`,
-                description: cfg.metrics?.[bivarDef.y.metricId]?.description || '',
+                description: yCfg.metrics?.[bivarDef.y.metricId]?.description || '',
                 onChange: createHandler('y'),
                 formatValue: (v) => this.mapRenderer.formatValue(v, setY, statsY),
                 toDisplay: yTx.toDisplay,
@@ -2815,8 +2524,9 @@ class ChoroplethApp {
         return { unit: composite.key, composite: { metric, definition, selection } };
     }
 
-    getCompositeSelectionSet(metric, definition) {
-        const key = `${this.currentCategory}::${metric}`;
+    getCompositeSelectionSet(metric, definition, categoryOverride = null) {
+        const categoryKey = categoryOverride || this.currentCategory;
+        const key = `${categoryKey}::${metric}`;
         let selection = this.compositeSelections.get(key);
         if (!selection) {
             const defaults = (definition.default && definition.default.length) ? definition.default : definition.parts;
@@ -3078,6 +2788,337 @@ class ChoroplethApp {
         this.setupFilterUI(false, cfg, composite.key, metric, null, { stats, currentRange: range });
     }
 }
+
+class RangeFilterControlElement extends HTMLElement {
+    constructor() {
+        super();
+        this._configured = false;
+
+        this.onChange = () => {};
+        this.formatValue = v => v;
+        this.toDisplay = v => v;
+        this.fromDisplay = v => v;
+
+        this.stats = null;
+        this.settings = null;
+        this.scaleObj = null;
+        this.normalizeValue = null;
+
+        this.domain = { min: 0, max: 1 };
+        this.hasBelowDomain = false;
+        this.hasAboveDomain = false;
+
+        this.dom = null;
+        this._handlers = null;
+        this._axisCanvas = null;
+        this._axisLabels = null;
+    }
+
+    connectedCallback() {
+        if (this._configured) return;
+
+        const tpl = document.getElementById('range-filter-template');
+        if (!tpl) throw new Error('#range-filter-template template missing');
+
+        this.replaceChildren(tpl.content.cloneNode(true));
+
+        const root = this;
+        const host = root.querySelector('.range-filter-block');
+        this.dom = {
+            host,
+            label: root.querySelector('.range-filter-label'),
+            range: root.querySelector('.dual-range'),
+            minPct: root.querySelector('.thumb-min'),
+            maxPct: root.querySelector('.thumb-max'),
+            minInput: root.querySelector('.input-min'),
+            maxInput: root.querySelector('.input-max'),
+            valDisplay: root.querySelector('.filter-value-display'),
+            axis: root.querySelector('.metric-axis')
+        };
+
+        this.#attachEvents();
+        this._configured = true;
+    }
+
+    setConfig(options = {}) {
+        this.onChange = options.onChange || (() => {});
+        this.formatValue = options.formatValue || (v => v);
+        this.toDisplay = options.toDisplay || (v => v);
+        this.fromDisplay = options.fromDisplay || (v => v);
+
+        const label = options.label || '';
+        if (this.dom?.label) {
+            this.dom.label.textContent = label;
+            this.dom.label.title = options.description || '';
+            this.dom.label.style.display = label ? '' : 'none';
+        }
+    }
+
+    update(stats, settings, currentRange, normalizeValue) {
+        this.stats = stats;
+        this.settings = settings;
+        this.scaleObj = normalizeValue?.scale;
+        this.normalizeValue = normalizeValue;
+
+        const rawDomain = (this.scaleObj && typeof this.scaleObj.domain === 'function')
+            ? this.scaleObj.domain()
+            : [stats.min, stats.max];
+
+        let dmin = Number(rawDomain?.[0]);
+        let dmax = Number(rawDomain?.[rawDomain.length - 1]);
+        if (!Number.isFinite(dmin)) dmin = stats.min;
+        if (!Number.isFinite(dmax)) dmax = stats.max;
+        if (dmin > dmax) [dmin, dmax] = [dmax, dmin];
+
+        this.domain = { min: dmin, max: dmax };
+
+        const eps = (Number.isFinite(stats?.max) && Number.isFinite(stats?.min))
+            ? Math.max(1e-12, (stats.max - stats.min) * 1e-9)
+            : 1e-12;
+        this.hasBelowDomain = Number.isFinite(stats?.min) && (stats.min < dmin - eps);
+        this.hasAboveDomain = Number.isFinite(stats?.max) && (stats.max > dmax + eps);
+
+        this.currentRange = currentRange || { min: dmin, max: dmax };
+
+        const tMin = this.#tOf(this.currentRange.min);
+        const tMax = this.#tOf(this.currentRange.max);
+
+        this.dom.minPct.value = Math.round(tMin * 100);
+        this.dom.maxPct.value = Math.round(tMax * 100);
+
+        this.dom.minInput.value = this.#roundForInput(this.toDisplay(this.currentRange.min));
+        this.dom.maxInput.value = this.#roundForInput(this.toDisplay(this.currentRange.max));
+
+        this.#renderAxis(dmin, dmax);
+        this.#updateVisuals(tMin, tMax);
+    }
+
+    #attachEvents() {
+        const { minPct, maxPct, minInput, maxInput } = this.dom;
+
+        const commitRange = (ta, tb) => {
+            const lo = Math.min(ta, tb);
+            const hi = Math.max(ta, tb);
+
+            const vMinInDomain = this.#vOf(lo);
+            const vMaxInDomain = this.#vOf(hi);
+
+            const minBound = (lo <= 0 && this.hasBelowDomain) ? -Infinity : vMinInDomain;
+            const maxBound = (hi >= 1 && this.hasAboveDomain) ? Infinity : vMaxInDomain;
+
+            this.onChange(minBound, maxBound);
+        };
+
+        const onSliderInput = () => {
+            const ta = Math.min(minPct.value, maxPct.value) / 100;
+            const tb = Math.max(minPct.value, maxPct.value) / 100;
+            this.#updateVisuals(ta, tb);
+
+            const vMin = this.#vOf(ta);
+            const vMax = this.#vOf(tb);
+            minInput.value = this.#roundForInput(this.toDisplay(vMin));
+            maxInput.value = this.#roundForInput(this.toDisplay(vMax));
+        };
+
+        const onSliderCommit = () => {
+            const ta = Math.min(minPct.value, maxPct.value) / 100;
+            const tb = Math.max(minPct.value, maxPct.value) / 100;
+            commitRange(ta, tb);
+        };
+
+        minPct.addEventListener('input', onSliderInput);
+        maxPct.addEventListener('input', onSliderInput);
+        minPct.addEventListener('change', onSliderCommit);
+        maxPct.addEventListener('change', onSliderCommit);
+
+        const onTextCommit = () => {
+            let vMin = this.fromDisplay(this.#parseNumber(minInput.value));
+            let vMax = this.fromDisplay(this.#parseNumber(maxInput.value));
+
+            if (!Number.isFinite(vMin)) vMin = this.domain.min;
+            if (!Number.isFinite(vMax)) vMax = this.domain.max;
+            if (vMin > vMax) [vMin, vMax] = [vMax, vMin];
+
+            const clampedMin = Math.max(this.domain.min, Math.min(this.domain.max, vMin));
+            const clampedMax = Math.max(this.domain.min, Math.min(this.domain.max, vMax));
+
+            const ta = this.#tOf(clampedMin);
+            const tb = this.#tOf(clampedMax);
+
+            this.dom.minPct.value = Math.round(ta * 100);
+            this.dom.maxPct.value = Math.round(tb * 100);
+            this.#updateVisuals(ta, tb);
+
+            const lo = Math.min(ta, tb);
+            const hi = Math.max(ta, tb);
+
+            const minBound = ((vMin <= this.domain.min || lo <= 0) && this.hasBelowDomain) ? -Infinity : clampedMin;
+            const maxBound = ((vMax >= this.domain.max || hi >= 1) && this.hasAboveDomain) ? Infinity : clampedMax;
+
+            this.onChange(minBound, maxBound);
+        };
+        minInput.addEventListener('change', onTextCommit);
+        maxInput.addEventListener('change', onTextCommit);
+        minInput.addEventListener('keydown', e => e.key === 'Enter' && onTextCommit());
+        maxInput.addEventListener('keydown', e => e.key === 'Enter' && onTextCommit());
+    }
+
+    #updateVisuals(ta, tb) {
+        const lo = Math.min(ta, tb);
+        const hi = Math.max(ta, tb);
+
+        this.dom.range.style.setProperty('--ta', lo);
+        this.dom.range.style.setProperty('--tb', hi);
+
+        const vMin = this.#vOf(lo);
+        const vMax = this.#vOf(hi);
+
+        if (this.dom.valDisplay) {
+            const left = (lo <= 0 && this.hasBelowDomain)
+                ? `≤ ${this.formatValue(this.domain.min)}`
+                : this.formatValue(vMin);
+
+            const right = (hi >= 1 && this.hasAboveDomain)
+                ? `≥ ${this.formatValue(this.domain.max)}`
+                : this.formatValue(vMax);
+
+            this.dom.valDisplay.textContent = `${left} – ${right}`;
+        }
+    }
+    #renderAxis(dmin, dmax) {
+
+        const axis = this.dom.axis;
+        if (!axis) {
+            return;
+        }
+
+        const dpr = window.devicePixelRatio || 1;
+        const cssW = Math.max(1, Math.round(axis.clientWidth || 220));
+        const cssH = Math.max(1, Math.round(axis.clientHeight || 14));
+
+        axis.style.position = axis.style.position || 'relative';
+
+        if (!this._axisCanvas) {
+            axis.replaceChildren();
+
+            const canvas = document.createElement('canvas');
+            canvas.style.position = 'absolute';
+            canvas.style.left = '0';
+            canvas.style.top = '0';
+            axis.appendChild(canvas);
+
+            const minLabel = document.createElement('div');
+            minLabel.className = 'tick-label';
+            axis.appendChild(minLabel);
+
+            const maxLabel = document.createElement('div');
+            maxLabel.className = 'tick-label';
+            axis.appendChild(maxLabel);
+
+            this._axisCanvas = canvas;
+            this._axisLabels = { min: minLabel, max: maxLabel };
+        }
+
+        const canvas = this._axisCanvas;
+        canvas.style.width = `${cssW}px`;
+        canvas.style.height = `${cssH}px`;
+        canvas.width = Math.max(1, Math.round(cssW * dpr));
+        canvas.height = Math.max(1, Math.round(cssH * dpr));
+
+        const ctx = canvas.getContext('2d');
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        const crisp = (x) => (Math.round(x * dpr) + 0.5) / dpr;
+
+        const majorCount = Math.max(2, Number(this.settings?.legendSteps || 6));
+        let ticks = d3.range(majorCount).map(i => dmin + (i / (majorCount - 1)) * (dmax - dmin));
+        ticks[0] = dmin;
+        ticks[ticks.length - 1] = dmax;
+        ticks = ticks.map(Number).filter(Number.isFinite);
+
+        // baseline
+        const y0 = crisp(2);
+        ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, y0);
+        ctx.lineTo(cssW, y0);
+        ctx.stroke();
+
+        // tick marks
+        const tickH = 6;
+        ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+        ctx.beginPath();
+        ticks.forEach((v) => {
+            const t = this.#tOf(v);
+            if (t < 0 || t > 1) return;
+            const x = crisp(t * (cssW - 1));
+            ctx.moveTo(x, y0);
+            ctx.lineTo(x, y0 + tickH);
+        });
+        ctx.stroke();
+
+        // labels (endpoints only) in DOM
+        const eps = (Number.isFinite(this.stats?.max) && Number.isFinite(this.stats?.min))
+            ? Math.max(1e-12, (this.stats.max - this.stats.min) * 1e-9)
+            : 1e-12;
+        const hasBelowDomain = Number.isFinite(this.stats?.min) && (this.stats.min < dmin - eps);
+        const hasAboveDomain = Number.isFinite(this.stats?.max) && (this.stats.max > dmax + eps);
+
+        const minLabel = this._axisLabels?.min;
+        const maxLabel = this._axisLabels?.max;
+        if (minLabel) {
+            minLabel.style.left = '0%';
+            minLabel.textContent = hasBelowDomain ? `≤ ${this.formatValue(dmin)}` : this.formatValue(dmin);
+        }
+        if (maxLabel) {
+            maxLabel.style.left = '100%';
+            maxLabel.textContent = hasAboveDomain ? `≥ ${this.formatValue(dmax)}` : this.formatValue(dmax);
+        }
+    }
+
+    #tOf(v) {
+        if (!this.normalizeValue) return 0;
+        return Math.max(0, Math.min(1, this.normalizeValue(Number(v))));
+    }
+
+    #vOf(t) {
+        const tClamped = Math.max(0, Math.min(1, t));
+        if (this.scaleObj && typeof this.scaleObj.invert === 'function') {
+            const rng = this.scaleObj.range();
+            const r0 = rng[0], r1 = rng[rng.length - 1];
+            const valInRange = r0 + tClamped * (r1 - r0);
+            return this.scaleObj.invert(valInRange);
+        }
+        return this.domain.min + tClamped * (this.domain.max - this.domain.min);
+    }
+
+    #parseNumber(raw) {
+        if (raw == null) return NaN;
+        let s = String(raw).trim().replace(/,/g, '');
+        if (s === '') return NaN;
+        if (s.endsWith('%')) s = s.slice(0, -1).trim();
+        const m = s.match(/^(-?\d*\.?\d*)([kKmMbBtT])$/i);
+        if (m) {
+            const val = parseFloat(m[1]);
+            const unit = m[2].toLowerCase();
+            const mult = { k: 1e3, m: 1e6, b: 1e9, t: 1e12 }[unit] || 1;
+            return val * mult;
+        }
+        return Number(s);
+    }
+
+    #roundForInput(x) {
+        if (!Number.isFinite(x)) return '';
+        const abs = Math.abs(x);
+        if (abs === 0) return '0';
+        if (abs < 0.001) return x.toExponential(2);
+        if (abs > 10000) return Math.round(x);
+        return parseFloat(x.toPrecision(4));
+    }
+}
+
+customElements.define('range-filter-control', RangeFilterControlElement);
 
 const app = new ChoroplethApp();
 app.initialize();

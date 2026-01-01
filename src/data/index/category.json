@@ -813,7 +813,7 @@
       "HHLD_1P",
       "HHLD_gen_sum",
       "HHLD_65",
-      "HHLD_65_sum"
+      "HHLD_65_HHVE"
     ],
     "metrics": {
       "HHLD_R": {
@@ -895,15 +895,8 @@
         "description": "Sum of generations, ratio",
         "composite": {
           "op": "sum",
-          "parts": [
-            "HHLD_1G",
-            "HHLD_2G",
-            "HHLD_3G",
-            "HHLD_4GP"
-          ],
-          "default": [
-            "HHLD_2G"
-          ],
+          "parts": ["HHLD_1G", "HHLD_2G", "HHLD_3G", "HHLD_4GP"],
+          "default": ["HHLD_2G"],
           "label": "Household generation"
         },
         "settings": {
@@ -924,6 +917,77 @@
             "type": "named",
             "value": "BuPu"
           }
+        }
+      },
+      "HHLD_65": {
+        "kind": "uni",
+        "label": "65 aged in hhld",
+        "description": "Households with 65 aged, ratio",
+        "field": "HHLD_65",
+        "settings": {
+          "scale": "linear",
+          "type": "numeric",
+          "domain": [0, 1],
+          "percentage": true,
+          "percentageScale": "fraction",
+          "binning": {
+            "method": "cluster",
+            "bins": 5
+          },
+          "format": {
+            "maximumFractionDigits": 2,
+            "notation": "standard"
+          },
+          "interpolation": {
+            "type": "named",
+            "value": "BuPu"
+          }
+        }
+      },
+      "HHLD_65_HHVE": {
+        "kind": "bivar",
+        "label": "65 HHLDs to vehic.",
+        "description": "Elderly in households (x), to vehicle ownership (sample) (y)",
+        "x": {
+          "metricId": "HOUS_SAMP_HHVE",
+          "category": "housing",
+          "settings": {
+            "paletteSteps": 5,
+            "domain": [0, 0.5],
+            "scale": "linear",
+            "type": "numeric",
+            "percentage": true,
+            "percentageScale": "fraction",
+            "binning": {
+              "method": "quantize",
+              "bins": 5
+            }
+          }
+        },
+        "y": {
+          "metricId": "HHLD_65",
+          "category": "households",
+          "settings": {
+            "paletteSteps": 5,
+            "domain": [0, 0.5],
+            "scale": "linear",
+            "type": "numeric",
+            "percentage": true,
+            "percentageScale": "fraction",
+            "binning": {
+              "method": "quantize",
+              "bins": 5
+            }
+          }
+        },
+        "method": {
+          "palette": [
+            ["#3070e8", "#3070cd", "#3070ac", "#307081", "#307031"],
+            ["#6290e8", "#6290cd", "#6290ac", "#629081", "#629031"],
+            ["#8faee8", "#8faecd", "#8faeac", "#8fae81", "#8fae31"],
+            ["#bccbe8", "#bccbcd", "#bccbac", "#bccb81", "#bccb31"],
+            ["#e8e8e8", "#e8e8cd", "#e8e8ac", "#e8e881", "#e8e831"]
+          ]
         }
       }
     }
