@@ -777,6 +777,8 @@ class MapRenderer {
         const initialViewState = options.bounds
             ? this.computeViewFromBounds(options.bounds, container)
             : { target: [0, 0, 0], zoom: 0, pitch: 0, bearing: 0 };
+        this.baseZoom = initialViewState.zoom ?? 0;
+        console.log('Base zoom: ' + this.baseZoom);
 
         this.deckgl = new Deck({
             parent: container,
@@ -784,7 +786,7 @@ class MapRenderer {
             initialViewState,
             controller: true,
             layerFilter: ({layer, viewport}) => {
-                if (layer.id === 'borders-county') return viewport.zoom >= 6;
+                if (layer.id === 'borders-county') return viewport.zoom >= (this.baseZoom + 3);
                 return true;
             },
             onHover: this.onHover.bind(this),
