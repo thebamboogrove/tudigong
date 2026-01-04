@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
 import { ckmeans } from 'simple-statistics';
-import { Deck } from '@deck.gl/core';
+import { Deck, OrthographicView, COORDINATE_SYSTEM } from '@deck.gl/core';
 import { GeoJsonLayer, PathLayer, PolygonLayer } from '@deck.gl/layers';
 import { PathStyleExtension } from '@deck.gl/extensions';
 import { feature as topojsonFeature, mesh as topojsonMesh } from 'topojson-client';
@@ -13,7 +13,6 @@ class BoundaryManager {
         this.bounds = null;
         this.countryFeatures = null;
         this.provinceMeshFeature = null;
-        this.projectionCEA = null;
         this.extraPaths = null;
         this.tendashPaths = null;
     }
@@ -50,6 +49,7 @@ class BoundaryManager {
 
         this.normalizeCoordinatesIfNeeded(this.features);
         this.normalizeCoordinatesIfNeeded(this.countryFeatures);
+        this.bounds = this.computeBounds(this.features);
 
         this.features.forEach((feature, index) => {
             feature.properties = sanitizeProps(feature.properties || {});
@@ -773,12 +773,14 @@ class MapRenderer {
 
     initialize(options = {}) {
         this.initLegendChrome();
-        const initialViewState = options.bounds ? this.computeViewFromBounds(options.bounds) : {
-            longitude: 105, latitude: 35, zoom: 3.5, pitch: 0, bearing: 0
-        };
+        const container = document.getElementById(this.containerId);
+        const initialViewState = options.bounds
+            ? this.computeViewFromBounds(options.bounds, container)
+            : { target: [0, 0, 0], zoom: 0, pitch: 0, bearing: 0 };
 
         this.deckgl = new Deck({
-            parent: document.getElementById(this.containerId),
+            parent: container,
+            views: [new OrthographicView({ id: 'ortho', flipY: false })],
             initialViewState,
             controller: true,
             layerFilter: ({layer, viewport}) => {
@@ -1248,6 +1250,7 @@ class MapRenderer {
         const layer = new GeoJsonLayer({
             id: 'choropleth-bivar',
             data: features,
+            coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
             filled: true,
             stroked: false,
             pickable: true,
@@ -1321,6 +1324,7 @@ class MapRenderer {
         const layer = new GeoJsonLayer({
             id: 'choropleth',
             data: features,
+            coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
             filled: true,
             stroked: false,
             pickable: true,
@@ -1375,6 +1379,7 @@ class MapRenderer {
                 new GeoJsonLayer({
                     id: 'country-fill',
                     data: app.boundaryManager.countryFeatures || [],
+                    coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
                     filled: true, stroked: false, pickable: false,
                     getFillColor: [190, 190, 190, 255]
                 })
@@ -1386,6 +1391,7 @@ class MapRenderer {
                 new PathLayer({
                     id: 'borders-county',
                     data: app.boundaryManager.countyPaths || [],
+                    coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
                     getPath: d => d, getColor: [55, 55, 55, 255],
                     getWidth: 14,
                     widthUnits: "meters",
@@ -1397,6 +1403,7 @@ class MapRenderer {
                 new PathLayer({
                     id: 'borders-province',
                     data: app.boundaryManager.provincePaths || [],
+                    coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
                     getPath: d => d, getColor: [30, 30, 30, 255],
                     getWidth: 28,
                     widthUnits: "meters",
@@ -1408,6 +1415,7 @@ class MapRenderer {
                 new PathLayer({
                     id: 'borders-extra',
                     data: app.boundaryManager.extraPaths || [],
+                    coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
                     getPath: d => d, getColor: [30, 30, 30, 255],
                     getDashArray: [12, 6],
                     dashJustified: false,
@@ -1425,6 +1433,7 @@ class MapRenderer {
                 new PathLayer({
                     id: 'tendash-line',
                     data: app.boundaryManager.tendashPaths || [],
+                    coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
                     getPath: d => d, getColor: [30, 30, 30, 255],
                     widthMinPixels: 1
                 })
@@ -1437,6 +1446,7 @@ class MapRenderer {
         return new GeoJsonLayer({
             id: 'hover-highlight',
             data: [this._hoveredFeature],
+            coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
             filled: false,
             stroked: true,
             pickable: false,
@@ -2080,12 +2090,17 @@ class MapRenderer {
         this.tooltip.replaceChildren(clone);
     }
 
-    computeViewFromBounds(bounds) {
-        const [minLon, minLat, maxLon, maxLat] = bounds;
+    computeViewFromBounds(bounds, container) {
+        const [minX, minY, maxX, maxY] = bounds;
+        const width = Math.max(1, container?.clientWidth || 800);
+        const height = Math.max(1, container?.clientHeight || 600);
+        const spanX = Math.max(1, (maxX - minX) * 1.05);
+        const spanY = Math.max(1, (maxY - minY) * 1.05);
+        const scale = Math.min(width / spanX, height / spanY);
+        const zoom = Math.log2(Math.max(1e-6, scale));
         return {
-            longitude: (minLon + maxLon) / 2,
-            latitude: (minLat + maxLat) / 2,
-            zoom: Math.max(2, Math.min(8, Math.log2(360 / (maxLon - minLon)) + 0.5)),
+            target: [(minX + maxX) / 2, (minY + maxY) / 2, 0],
+            zoom,
             pitch: 0, bearing: 0
         };
     }

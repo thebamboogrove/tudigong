@@ -23,7 +23,7 @@ With additions affecting roughly 190 standard county-level divisions.
 > Geospatial additions and all other features are sometimes approximate and inaccurate as a result of simplified boundary data.
 
 > [!NOTE]
-> Map is denoted with WGS84 (EPSG:4326) coordinates but uses an AEA China projection for display purposes.
+> Map features are pre-projected to fit an AEA China projection instead of the standard WGS84 (EPSG:4326) projection for display purposes.
 > $`{\mathrm{\phi}}_0 = 36 00'00"{\mathrm{N}}\qquad 
 \varphi_1 = 24\degree 00'00"{\mathrm{N}}\qquad
 \varphi_2 = 48\degree 00'00"{\mathrm{N}}\qquad

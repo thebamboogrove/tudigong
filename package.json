@@ -1,13 +1,14 @@
 {
   "name": "tudigong",
-  "version": "1.0.0-alpha.1",
+  "version": "0.1.0-alpha.1",
   "type": "module",
   "description": "",
   "main": "index.html",
   "scripts": {
     "build": "node scripts/build.js",
     "dev": "node scripts/dev.js",
-    "start": "npm run build && npx http-server -c-1 dist"
+    "start": "npm run build && npx http-server -c-1 dist",
+    "preproject:aea": "node scripts/preproject-topojson.js"
   },
   "devDependencies": {
     "@eslint/css": "^0.14.1",
