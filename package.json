@@ -7,8 +7,7 @@
   "scripts": {
     "build": "node scripts/build.js",
     "dev": "node scripts/dev.js",
-    "start": "npm run build && npx http-server -c-1 dist",
-    "preproject:aea": "node scripts/preproject-topojson.js"
+    "start": "npm run build && npx http-server -c-1 dist"
   },
   "devDependencies": {
     "@eslint/css": "^0.14.1",
