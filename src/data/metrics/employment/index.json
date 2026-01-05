@@ -15,13 +15,33 @@
     "EMPL_PROF_SRVC",
     "EMPL_PROF_AGHU",
     "EMPL_PROF_MANU",
-    "EMPL_PROF_OTHR"
+    "EMPL_PROF_OTHR",
+    "EMPL_INDU_AGHU",
+    "EMPL_INDU_MINI",
+    "EMPL_INDU_MANU",
+    "EMPL_INDU_UTIL",
+    "EMPL_INDU_CONS",
+    "EMPL_INDU_SALE",
+    "EMPL_INDU_TRMA",
+    "EMPL_INDU_ACCA",
+    "EMPL_INDU_ITSE",
+    "EMPL_INDU_FINA",
+    "EMPL_INDU_REES",
+    "EMPL_INDU_LEBS",
+    "EMPL_INDU_RSRC",
+    "EMPL_INDU_ENVI",
+    "EMPL_INDU_RESI",
+    "EMPL_INDU_EDUC",
+    "EMPL_INDU_HESO",
+    "EMPL_INDU_CSEN",
+    "EMPL_INDU_PMNG",
+    "EMPL_INDU_INTO"
   ],
   "stringProperties": [],
   "packs": {
     "pack-0": {
       "file": "pack-0.bin",
-      "byteLength": 95680,
+      "byteLength": 334880,
       "metrics": [
         "EMPL_OCCU",
         "EMPL_PROF_KMAN",
@@ -30,7 +50,27 @@
         "EMPL_PROF_SRVC",
         "EMPL_PROF_AGHU",
         "EMPL_PROF_MANU",
-        "EMPL_PROF_OTHR"
+        "EMPL_PROF_OTHR",
+        "EMPL_INDU_AGHU",
+        "EMPL_INDU_MINI",
+        "EMPL_INDU_MANU",
+        "EMPL_INDU_UTIL",
+        "EMPL_INDU_CONS",
+        "EMPL_INDU_SALE",
+        "EMPL_INDU_TRMA",
+        "EMPL_INDU_ACCA",
+        "EMPL_INDU_ITSE",
+        "EMPL_INDU_FINA",
+        "EMPL_INDU_REES",
+        "EMPL_INDU_LEBS",
+        "EMPL_INDU_RSRC",
+        "EMPL_INDU_ENVI",
+        "EMPL_INDU_RESI",
+        "EMPL_INDU_EDUC",
+        "EMPL_INDU_HESO",
+        "EMPL_INDU_CSEN",
+        "EMPL_INDU_PMNG",
+        "EMPL_INDU_INTO"
       ]
     }
   },
@@ -151,6 +191,306 @@
         "max": 0.0608,
         "mean": 0.002571064969859354,
         "median": 0.0012000000569969416,
+        "count": 2986,
+        "missingCount": 4
+      }
+    },
+    "EMPL_INDU_AGHU": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 95680,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.849,
+        "mean": 0.2570624916275958,
+        "median": 0.24629999697208405,
+        "count": 2986,
+        "missingCount": 4
+      }
+    },
+    "EMPL_INDU_MINI": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 107640,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.5697,
+        "mean": 0.016254521098459537,
+        "median": 0.0024999999441206455,
+        "count": 2986,
+        "missingCount": 4
+      }
+    },
+    "EMPL_INDU_MANU": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 119600,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.6645,
+        "mean": 0.13855093770931018,
+        "median": 0.11069999635219574,
+        "count": 2986,
+        "missingCount": 4
+      }
+    },
+    "EMPL_INDU_UTIL": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 131560,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.1197,
+        "mean": 0.011116577361018058,
+        "median": 0.008200000040233135,
+        "count": 2986,
+        "missingCount": 4
+      }
+    },
+    "EMPL_INDU_CONS": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 143520,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.3904,
+        "mean": 0.11065053583389149,
+        "median": 0.1031000018119812,
+        "count": 2986,
+        "missingCount": 4
+      }
+    },
+    "EMPL_INDU_SALE": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 155480,
+      "length": 2990,
+      "stats": {
+        "min": 0.0118,
+        "max": 0.3666,
+        "mean": 0.12346195579370413,
+        "median": 0.1160999983549118,
+        "count": 2986,
+        "missingCount": 4
+      }
+    },
+    "EMPL_INDU_TRMA": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 167440,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.2134,
+        "mean": 0.05042535164099133,
+        "median": 0.04580000042915344,
+        "count": 2986,
+        "missingCount": 4
+      }
+    },
+    "EMPL_INDU_ACCA": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 179400,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.46,
+        "mean": 0.04964899531145353,
+        "median": 0.04639999940991402,
+        "count": 2986,
+        "missingCount": 4
+      }
+    },
+    "EMPL_INDU_ITSE": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 191360,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.1868,
+        "mean": 0.011854889484259862,
+        "median": 0.007899999618530273,
+        "count": 2986,
+        "missingCount": 4
+      }
+    },
+    "EMPL_INDU_FINA": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 203320,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.1079,
+        "mean": 0.01282880107166777,
+        "median": 0.009399999864399433,
+        "count": 2986,
+        "missingCount": 4
+      }
+    },
+    "EMPL_INDU_REES": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 215280,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.1526,
+        "mean": 0.015148995311453453,
+        "median": 0.010599999688565731,
+        "count": 2986,
+        "missingCount": 4
+      }
+    },
+    "EMPL_INDU_LEBS": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 227240,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.1788,
+        "mean": 0.022890120562625522,
+        "median": 0.017899999395012856,
+        "count": 2986,
+        "missingCount": 4
+      }
+    },
+    "EMPL_INDU_RSRC": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 239200,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.1162,
+        "mean": 0.009643469524447425,
+        "median": 0.006000000052154064,
+        "count": 2986,
+        "missingCount": 4
+      }
+    },
+    "EMPL_INDU_ENVI": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 251160,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.2972,
+        "mean": 0.009012156731413251,
+        "median": 0.007199999876320362,
+        "count": 2986,
+        "missingCount": 4
+      }
+    },
+    "EMPL_INDU_RESI": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 263120,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.189,
+        "mean": 0.033375887474882786,
+        "median": 0.03229999914765358,
+        "count": 2986,
+        "missingCount": 4
+      }
+    },
+    "EMPL_INDU_EDUC": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 275080,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.1994,
+        "mean": 0.04293985264567985,
+        "median": 0.03920000046491623,
+        "count": 2986,
+        "missingCount": 4
+      }
+    },
+    "EMPL_INDU_HESO": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 287040,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.0837,
+        "mean": 0.02116865371734763,
+        "median": 0.018400000408291817,
+        "count": 2986,
+        "missingCount": 4
+      }
+    },
+    "EMPL_INDU_CSEN": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 299000,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.0784,
+        "mean": 0.0061370060281312755,
+        "median": 0.004699999932199717,
+        "count": 2986,
+        "missingCount": 4
+      }
+    },
+    "EMPL_INDU_PMNG": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 310960,
+      "length": 2990,
+      "stats": {
+        "min": 0.0031,
+        "max": 0.6807,
+        "mean": 0.05782488278633632,
+        "median": 0.043800000101327896,
+        "count": 2986,
+        "missingCount": 4
+      }
+    },
+    "EMPL_INDU_INTO": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 322920,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.0007,
+        "mean": 0.000005257870060281304,
+        "median": 0,
         "count": 2986,
         "missingCount": 4
       }

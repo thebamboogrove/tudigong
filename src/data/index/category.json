@@ -994,7 +994,7 @@
   },
   "employment": {
     "label": "Employment",
-    "metricsOrder": ["EMPL_OCCU", "EMPL_PROF_sum"],
+    "metricsOrder": ["EMPL_OCCU", "EMPL_PROF_sum", "EMPL_INDU_sum"],
     "metrics": {
       "EMPL_OCCU": {
         "kind": "uni",
@@ -1037,7 +1037,153 @@
             "EMPL_PROF_OTHR"
           ],
           "default": ["EMPL_PROF_TECP", "EMPL_PROF_OFCE"],
-          "label": "Profession categories"
+          "label": "Profession categories",
+          "partLabels": {
+            "EMPL_PROF_KMAN": {
+              "label": "Management",
+              "description": "Persons in charge, lead and key management personnel within various organizations"
+            },
+            "EMPL_PROF_TECP": {
+              "label": "Technical personnel"
+            },
+            "EMPL_PROF_OFCE": {
+              "label": "Office workers"
+            },
+            "EMPL_PROF_SRVC": {
+              "label": "Service workers"
+            },
+            "EMPL_PROF_AGHU": {
+              "label": "Primary sector",
+              "description": "Personnel and auxiliaries involved in agriculture, forestry, animal husbandry and fishery production"
+            },
+            "EMPL_PROF_MANU": {
+              "label": "Manufacturing"
+            },
+            "EMPL_PROF_OTHR": {
+              "label": "Other",
+              "description": "Various other professions outside the scope of other classifications"
+            }
+          }
+        },
+        "settings": {
+          "type": "numeric",
+          "percentage": true,
+          "percentageScale": "fraction",
+          "scale": "linear",
+          "domain": [0, 1],
+          "binning": {
+            "method": "cluster",
+            "bins": 5
+          },
+          "format": { "maximumFractionDigits": 2, "notation": "standard" },
+          "interpolation": {
+            "type": "named",
+            "value": "Spectral"
+          }
+        }
+      },
+      "EMPL_INDU_sum": {
+        "kind": "uni",
+        "label": "Industry sum",
+        "description": "Sum of selected industry, ratio of employed (sample)",
+        "composite": {
+          "op": "sum",
+          "parts": [
+            "EMPL_INDU_AGHU",
+            "EMPL_INDU_MINI",
+            "EMPL_INDU_MANU",
+            "EMPL_INDU_UTIL",
+            "EMPL_INDU_CONS",
+            "EMPL_INDU_SALE",
+            "EMPL_INDU_TRMA",
+            "EMPL_INDU_ACCA",
+            "EMPL_INDU_ITSE",
+            "EMPL_INDU_FINA",
+            "EMPL_INDU_REES",
+            "EMPL_INDU_LEBS",
+            "EMPL_INDU_RSRC",
+            "EMPL_INDU_ENVI",
+            "EMPL_INDU_RESI",
+            "EMPL_INDU_EDUC",
+            "EMPL_INDU_HESO",
+            "EMPL_INDU_CSEN",
+            "EMPL_INDU_PMNG",
+            "EMPL_INDU_INTO"
+          ],
+          "default": ["EMPL_INDU_AGHU", "EMPL_INDU_MINI", "EMPL_INDU_MANU"],
+          "label": "Industry categories",
+          "partLabels": {
+            "EMPL_INDU_AGHU": {
+              "label": "Primary industry",
+              "description": "Agriculture, forestry, animal husbandry and fishery"
+            },
+            "EMPL_INDU_MINI": {
+              "label": "Mining"
+            },
+            "EMPL_INDU_MANU": {
+              "label": "Manufacturing"
+            },
+            "EMPL_INDU_UTIL": {
+              "label": "Utilities",
+              "description": "Electricity, heat, gas and water production and supply"
+            },
+            "EMPL_INDU_CONS": {
+              "label": "Construction"
+            },
+            "EMPL_INDU_SALE": {
+              "label": "Wholesale and retail"
+            },
+            "EMPL_INDU_TRMA": {
+              "label": "Transport",
+              "description": "Transportation, storage and postal services"
+            },
+            "EMPL_INDU_ACCA": {
+              "label": "Accommodations",
+              "description": "Accommodation and catering"
+            },
+            "EMPL_INDU_ITSE": {
+              "label": "IT services"
+            },
+            "EMPL_INDU_FINA": {
+              "label": "Finance"
+            },
+            "EMPL_INDU_REES": {
+              "label": "Real estate"
+            },
+            "EMPL_INDU_LEBS": {
+              "label": "Leasing and service"
+            },
+            "EMPL_INDU_RSRC": {
+              "label": "Science and technology",
+              "description": "Scientific research and technology services"
+            },
+            "EMPL_INDU_ENVI": {
+              "label": "Environment",
+              "description": "Water conservancy, environment and public facility management"
+            },
+            "EMPL_INDU_RESI": {
+              "label": "Residential",
+              "description": "Residential services, repair and other services"
+            },
+            "EMPL_INDU_EDUC": {
+              "label": "Education"
+            },
+            "EMPL_INDU_HESO": {
+              "label": "Health and social services"
+            },
+            "EMPL_INDU_CSEN": {
+              "label": "Culture and entertainment",
+              "description": "Culture, sports and entertainment"
+            },
+            "EMPL_INDU_PMNG": {
+              "label": "Public service",
+              "description": "Public administration, social security and social organizations"
+            },
+            "EMPL_INDU_INTO": {
+              "label": "IGO",
+              "description": "International organizations"
+            }
+          }
         },
         "settings": {
           "type": "numeric",
