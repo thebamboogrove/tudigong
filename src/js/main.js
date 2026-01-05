@@ -2703,6 +2703,19 @@ class ChoroplethApp {
         container.appendChild(panel);
     }
 
+    getCompositePartMeta(definition, part) {
+        const meta = definition?.partLabels?.[part];
+        if (!meta) return { label: part, description: '' };
+        if (typeof meta === 'string') return { label: meta, description: '' };
+        if (typeof meta === 'object') {
+            return {
+                label: meta.label || part,
+                description: meta.description || ''
+            };
+        }
+        return { label: part, description: '' };
+    }
+
     renderCompositeControls(container) {
         const info = this.activeComposite;
         if (!info || !info.definition?.parts?.length) return;
@@ -2752,6 +2765,7 @@ class ChoroplethApp {
             row.style.display = 'flex';
             row.style.alignItems = 'center';
             row.style.gap = '6px';
+            const { label, description } = this.getCompositePartMeta(info.definition, part);
 
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
@@ -2763,7 +2777,8 @@ class ChoroplethApp {
             };
 
             const text = document.createElement('span');
-            text.textContent = part;
+            text.textContent = label;
+            if (description) text.title = description;
 
             row.appendChild(checkbox);
             row.appendChild(text);
