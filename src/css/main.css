@@ -501,6 +501,7 @@ input[type="range"] {
     z-index: 1000;
     font-size: 0.8em;
     max-width: 260px;
+    will-change: transform;
 }
 
 .tooltip-title {

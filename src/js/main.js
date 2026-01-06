@@ -514,6 +514,23 @@ class MapRenderer {
         this.bivarCfg = null;
 
         this.tooltip = document.getElementById('tooltip');
+        this._tooltipContentKey = '';
+        this._tooltipSize = { w: 0, h: 0 };
+        this._tooltipRaf = 0;
+        this._tooltipNextPos = null;
+        this._tooltipShowDelay = 80;
+        this._tooltipShowTimer = 0;
+        this._tooltipPending = null;
+        this._tooltipVisible = false;
+        this._tooltipChangeDelay = 60;
+        this._tooltipChangeTimer = 0;
+        this._tooltipPendingChange = null;
+        this._tooltipPendingKey = '';
+        if (this.tooltip) {
+            this.tooltip.style.left = '0px';
+            this.tooltip.style.top = '0px';
+            this.tooltip.style.transform = 'translate3d(0, 0, 0)';
+        }
         this.filterRange = null;
         this.categoricalFilter = new Set();
         this.bivarFilters = { x: null, y: null };
@@ -2050,22 +2067,40 @@ class MapRenderer {
     onHover(info) {
         if (!info.object || !this.currentData) {
             this.tooltip.style.display = 'none';
+            this.tooltip.style.visibility = 'hidden';
+            if (this._tooltipRaf) {
+                cancelAnimationFrame(this._tooltipRaf);
+                this._tooltipRaf = 0;
+            }
+            this._tooltipNextPos = null;
+            if (this._tooltipShowTimer) {
+                clearTimeout(this._tooltipShowTimer);
+                this._tooltipShowTimer = 0;
+            }
+            this._tooltipPending = null;
+            if (this._tooltipChangeTimer) {
+                clearTimeout(this._tooltipChangeTimer);
+                this._tooltipChangeTimer = 0;
+            }
+            this._tooltipPendingChange = null;
+            this._tooltipPendingKey = '';
+            this._tooltipVisible = false;
+            this._tooltipContentKey = '';
+            this.tooltip.style.opacity = '';
             this.setHoveredFeature(null);
             return;
         }
 
         const feature = info.object;
         this.setHoveredFeature(feature);
-        this.tooltip.style.display = 'block';
-        this.tooltip.style.left = info.x + 10 + 'px';
-        this.tooltip.style.top = info.y + 10 + 'px';
 
         const tpl = document.getElementById('tooltip-template');
         const clone = tpl.content.cloneNode(true);
         const props = feature.properties || {};
         const featureId = app.dataManager.normalizeId(props.CODE ?? props.code ?? feature.id);
         const nameFromFile = app.dataManager.getFeatureNameByFeature(this.currentData, feature);
-        const fallbackTitle = props?.name || featureId || feature.id;
+        const nameFromProps = props.NAME || props.name || '';
+        const fallbackTitle = nameFromProps || featureId || feature.id;
         const title = nameFromFile || fallbackTitle || '';
         clone.querySelector('.tooltip-title').textContent = title;
         const subtitleEl = clone.querySelector('.tooltip-subtitle');
@@ -2089,7 +2124,130 @@ class MapRenderer {
             clone.querySelector('.tooltip-value').textContent = this.formatValue(v, this.currentMetricSettings);
         }
 
-        this.tooltip.replaceChildren(clone);
+        const contentKey = this.getTooltipContentKey(featureId);
+        if (this._tooltipVisible || this._tooltipShowDelay <= 0) {
+            this.showTooltipNow(info, clone, contentKey);
+            return;
+        }
+
+        if (this._tooltipChangeTimer) {
+            clearTimeout(this._tooltipChangeTimer);
+            this._tooltipChangeTimer = 0;
+        }
+        this._tooltipPendingChange = null;
+        this._tooltipPending = { info, clone, contentKey };
+        if (!this._tooltipShowTimer) {
+            this._tooltipShowTimer = setTimeout(() => {
+                this._tooltipShowTimer = 0;
+                const pending = this._tooltipPending;
+                this._tooltipPending = null;
+                if (!pending) return;
+                this.showTooltipNow(pending.info, pending.clone, pending.contentKey);
+            }, this._tooltipShowDelay);
+        }
+
+    }
+
+    showTooltipNow(info, clone, contentKey) {
+        this.tooltip.style.display = 'block';
+        this.tooltip.style.visibility = 'visible';
+        this._tooltipVisible = true;
+
+        if (this._tooltipChangeDelay > 0 && this._tooltipContentKey && contentKey !== this._tooltipContentKey) {
+            if (this._tooltipPendingKey !== contentKey) {
+                if (this._tooltipChangeTimer) {
+                    clearTimeout(this._tooltipChangeTimer);
+                    this._tooltipChangeTimer = 0;
+                }
+                this._tooltipPendingKey = contentKey;
+            }
+            this.tooltip.style.opacity = '0.15';
+            this._tooltipPendingChange = { info, clone, contentKey };
+            if (!this._tooltipChangeTimer) {
+                this._tooltipChangeTimer = setTimeout(() => {
+                    this._tooltipChangeTimer = 0;
+                    const pending = this._tooltipPendingChange;
+                    this._tooltipPendingChange = null;
+                    if (!pending) return;
+                    this._tooltipPendingKey = '';
+                    this.applyTooltipContent(pending.clone, pending.contentKey);
+                    this.updateTooltipPosition(pending.info);
+                }, this._tooltipChangeDelay);
+            }
+        } else {
+            if (this._tooltipChangeTimer) {
+                clearTimeout(this._tooltipChangeTimer);
+                this._tooltipChangeTimer = 0;
+            }
+            this._tooltipPendingChange = null;
+            this._tooltipPendingKey = '';
+            this.applyTooltipContent(clone, contentKey);
+        }
+        this.updateTooltipPosition(info);
+    }
+
+    applyTooltipContent(clone, contentKey) {
+        if (contentKey !== this._tooltipContentKey) {
+            this._tooltipContentKey = contentKey;
+            this.tooltip.replaceChildren(clone);
+            this._tooltipSize = {
+                w: this.tooltip.offsetWidth,
+                h: this.tooltip.offsetHeight
+            };
+        }
+        this.tooltip.style.opacity = '1';
+        this.tooltip.style.visibility = 'visible';
+    }
+
+    getTooltipContentKey(featureId) {
+        const metricKey = this.bivar ? (this.bivar.key || 'bivar') : (this.currentMetricId || this.currentMetric || '');
+        return `${featureId}::${metricKey}`;
+    }
+
+    updateTooltipPosition(info) {
+        const x0 = Number(info?.x);
+        const y0 = Number(info?.y);
+        if (!Number.isFinite(x0) || !Number.isFinite(y0)) return;
+        this.scheduleTooltipPosition(x0, y0);
+    }
+
+    scheduleTooltipPosition(x0, y0) {
+        this._tooltipNextPos = { x: x0, y: y0 };
+        if (this._tooltipRaf) return;
+        this._tooltipRaf = requestAnimationFrame(() => {
+            this._tooltipRaf = 0;
+            const next = this._tooltipNextPos;
+            this._tooltipNextPos = null;
+            if (!next) return;
+            this.applyTooltipPosition(next.x, next.y);
+        });
+    }
+
+    applyTooltipPosition(x0, y0) {
+        const offset = 12;
+        const padding = 8;
+        const container = this.tooltip.offsetParent || this.tooltip.parentElement || document.body;
+        const rect = container.getBoundingClientRect();
+        let tooltipW = this._tooltipSize.w;
+        let tooltipH = this._tooltipSize.h;
+        if (!(tooltipW > 0 && tooltipH > 0)) {
+            tooltipW = this.tooltip.offsetWidth;
+            tooltipH = this.tooltip.offsetHeight;
+            this._tooltipSize = { w: tooltipW, h: tooltipH };
+        }
+        let x = x0 + offset;
+        let y = y0 + offset;
+        if (x + tooltipW + padding > rect.width && x0 - offset - tooltipW >= padding) {
+            x = x0 - offset - tooltipW;
+        }
+        if (y + tooltipH + padding > rect.height && y0 - offset - tooltipH >= padding) {
+            y = y0 - offset - tooltipH;
+        }
+        const maxX = Math.max(padding, rect.width - tooltipW - padding);
+        const maxY = Math.max(padding, rect.height - tooltipH - padding);
+        x = Math.min(Math.max(padding, x), maxX);
+        y = Math.min(Math.max(padding, y), maxY);
+        this.tooltip.style.transform = `translate3d(${Math.round(x)}px, ${Math.round(y)}px, 0)`;
     }
 
     computeViewFromBounds(bounds, container) {
