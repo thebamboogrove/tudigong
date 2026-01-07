@@ -16,7 +16,7 @@
 body {
     font-family: 'Noto Sans SC', 'Adjusted Arial Fallback', sans-serif;
     color: rgb(38, 38, 38);
-    font-size: 1rem;
+    font-size: 0.8rem;
     background: hsl(27.9, 86%, 96.5%);
 }
 
@@ -58,8 +58,7 @@ body {
     color: #212529;
 }
 
-.map-controls .control-group,
-.map-controls .filter-controls {
+.map-controls .control-group {
     background: #ffffff;
     padding: 1em;
 }
@@ -529,11 +528,6 @@ input[type="range"] {
     font-size: 12px;
 }
 
-.filter-controls {
-    padding-top: 15px;
-    margin-top: 15px;
-}
-
 .metric-selector {
     display: inline-flex;
     flex-direction: row;
@@ -889,7 +883,7 @@ table.ad-code td+td {
 @media (min-width: 720px) {
 
     body {
-        font-size: 1.1rem;
+        font-size: 1.0rem;
     }
 
     .text-container {
@@ -913,6 +907,11 @@ table.ad-code td+td {
 
     .map-controls .metric-selector {
         gap: 0.8em 0.4em;
+    }
+
+    .filter-controls {
+        padding-top: 1em;
+        margin-top: 1em;
     }
 }
 
