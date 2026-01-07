@@ -51,6 +51,10 @@ body {
     width: 100%;
 }
 
+.map-controls .map-controls-col--full {
+    width: 100%;
+}
+
 .map-controls h2 {
     font-size: 1.125rem;
     line-height: 1.2;
@@ -152,6 +156,50 @@ body {
     background: #fff;
 }
 
+.map-controls .composite-controls-wrapper.is-hidden {
+    display: none;
+}
+
+.map-controls .composite-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6em;
+}
+
+.map-controls .composite-controls-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1em;
+    flex-wrap: wrap;
+}
+
+.map-controls .composite-controls-title {
+    font-weight: 600;
+}
+
+.map-controls .composite-controls-actions {
+    display: flex;
+    gap: 0.4em;
+}
+
+.map-controls .composite-controls-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em 1.2em;
+    --cols: 1
+}
+
+.map-controls .composite-controls-item {
+    display: flex;
+    flex: 0 0 calc((100% - (var(--cols) - 1) * 1.2em) / var(--cols));
+    min-width: max-content;
+    align-items: center;
+    gap: 0.5em;
+    cursor: pointer;
+    user-select: none;
+}
+
 .map-container {
     flex: 1;
     position: relative;
@@ -179,7 +227,7 @@ input[type="range"] {
     bottom: 1rem;
     left: 1rem;
     background: white;
-    padding: 1.25rem 2rem 1rem;
+    padding: 1.25rem 2rem;
     box-shadow: 0 0.1em 0.2em rgba(0, 0, 0, 0.18);
     min-width: 200px;
     max-width: calc(100% - 2em);
@@ -196,7 +244,8 @@ input[type="range"] {
     gap: 0.6rem;
 }
 
-.legend-shell, .legend-shell div *{
+.legend-shell,
+.legend-shell div * {
     max-width: 100%;
 }
 
@@ -479,6 +528,7 @@ input[type="range"] {
 }
 
 .loading {
+    width: max-content;
     position: absolute;
     top: 50%;
     left: 50%;
@@ -585,7 +635,8 @@ range-filter-control .dual-range::after {
     z-index: 1;
 }
 
-range-filter-control .dual-range::before, range-filter-control .dual-range::after {
+range-filter-control .dual-range::before,
+range-filter-control .dual-range::after {
     content: "";
     grid-column: 1/span 2;
     grid-row: 3;
@@ -761,12 +812,9 @@ range-filter-control .range-fields input[type="text"] {
 }
 
 range-filter-control span.filter-value-display {
+    padding-right: 1em;
+    line-height: 0;
     color: #495057;
-}
-
-.composite-controls label {
-    cursor: pointer;
-    user-select: none;
 }
 
 .text-container {
@@ -898,11 +946,19 @@ table.ad-code td+td {
         display: grid;
         grid-template-columns: 1fr 1fr;
         align-items: start;
-        gap: 20px;
     }
 
     .map-controls .map-controls-col {
         width: auto;
+    }
+
+    .map-controls .map-controls-col--full {
+        grid-column: 1 / -1;
+        width: auto;
+    }
+
+    .map-controls .composite-controls-grid {
+        --cols: 2
     }
 
     .map-controls .metric-selector {
@@ -933,6 +989,10 @@ table.ad-code td+td {
     .map-controls .metric-selector {
         gap: 1em 0.6em;
     }
+
+    .map-controls .composite-controls-grid {
+        --cols: 3
+    }
 }
 
 @media (min-width: 1600px) {
@@ -946,6 +1006,10 @@ table.ad-code td+td {
 
     .map-controls {
         max-width: 1600px;
+    }
+
+    .map-controls .composite-controls-grid {
+        --cols: 4
     }
 
     .container {

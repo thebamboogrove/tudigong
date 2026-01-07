@@ -145,6 +145,20 @@
                 <div class="tick-line"></div>
             </div>
         </template>
+
+        <template id="composite-controls-template">
+            <div class="composite-controls">
+                <div class="composite-controls-header">
+                    <label class="composite-controls-title"></label>
+                    <div class="composite-controls-actions">
+                        <button type="button" class="btn-small" data-action="all">All</button>
+                        <button type="button" class="btn-small" data-action="none">None</button>
+                        <button type="button" class="btn-small" data-action="default">Default</button>
+                    </div>
+                </div>
+                <div class="composite-controls-grid"></div>
+            </div>
+        </template>
     </div>
 </div>
 
@@ -186,20 +200,13 @@
             </div>
             <div class="categorical-filter" id="categoricalFilter" style="display:none;">
             </div>
-            <div class="composite-controls" id="compositeControls" style="display:none; margin-top:8px;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <label id="compositeLabel">Components</label>
-                    <div style="display:flex; gap:6px;">
-                        <button type="button" id="compositeSelectAll" class="btn-small">All</button>
-                        <button type="button" id="compositeSelectNone" class="btn-small">None</button>
-                        <button type="button" id="compositeSelectDefault" class="btn-small">Default</button>
-                    </div>
-                </div>
-                <div id="compositeParts" style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px; margin-top:6px;"></div>
-            </div>
             <div id="filterValue" class="filter-value">Loading filter..</div>
         </div>
     </div>
+    </div>
+
+    <div class="map-controls-col map-controls-col--full">
+        <div class="control-group composite-controls-wrapper is-hidden" id="compositeControls"></div>
     </div>
 </div>
 

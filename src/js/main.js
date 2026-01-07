@@ -2577,8 +2577,13 @@ class ChoroplethApp {
 
     setupFilterUI(isBivar, cfg, unit, metricKey, bivarDef, options = {}) {
         const container = document.getElementById('filterControls');
+        const compositeContainer = document.getElementById('compositeControls');
         container.replaceChildren();
         this.filterControls = [];
+        if (compositeContainer) {
+            compositeContainer.replaceChildren();
+            compositeContainer.classList.add('is-hidden');
+        }
 
         const addRangeControl = ({ label, description, onChange, formatValue }) => {
             const el = document.createElement('range-filter-control');
@@ -2662,8 +2667,9 @@ class ChoroplethApp {
                     fromDisplay: tx.fromDisplay
                 }).update(stats, settings, currentRange, norm);
 
-                if (this.activeComposite && this.activeComposite.metric === metricKey) {
-                    this.renderCompositeControls(container);
+                if (this.activeComposite && this.activeComposite.metric === metricKey && compositeContainer) {
+                    this.renderCompositeControls(compositeContainer);
+                    compositeContainer.classList.remove('is-hidden');
                 }
             } else if (stats.type === 'categorical') {
                 this.renderCategoricalFilter(container, stats, settings, label, unit, description);
@@ -2876,53 +2882,34 @@ class ChoroplethApp {
 
     renderCompositeControls(container) {
         const info = this.activeComposite;
-        if (!info || !info.definition?.parts?.length) return;
+        if (!info || !info.definition?.parts?.length || !container) return;
 
-        const panel = document.createElement('div');
-        panel.className = 'composite-controls';
-        panel.style.display = 'flex';
-        panel.style.flexDirection = 'column';
-        panel.style.gap = '6px';
-        panel.style.marginTop = '12px';
+        const tpl = document.getElementById('composite-controls-template');
+        if (!tpl) return;
 
-        const header = document.createElement('div');
-        header.style.display = 'flex';
-        header.style.justifyContent = 'space-between';
-        header.style.alignItems = 'center';
+        const fragment = tpl.content.cloneNode(true);
+        const panel = fragment.querySelector('.composite-controls');
+        const title = fragment.querySelector('.composite-controls-title');
+        const actions = fragment.querySelector('.composite-controls-actions');
+        const grid = fragment.querySelector('.composite-controls-grid');
+        const btnAll = actions?.querySelector('[data-action="all"]');
+        const btnNone = actions?.querySelector('[data-action="none"]');
+        const btnDefault = actions?.querySelector('[data-action="default"]');
 
-        const title = document.createElement('label');
-        title.textContent = info.definition.label || 'Composite components';
-        header.appendChild(title);
-
-        const actions = document.createElement('div');
-        actions.style.display = 'flex';
-        actions.style.gap = '6px';
-        const makeBtn = (label, parts) => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.textContent = label;
-            btn.className = 'btn-small';
-            btn.onclick = () => { void this.updateCompositeSelection(parts); };
-            return btn;
-        };
-        actions.appendChild(makeBtn('All', info.definition.parts));
-        actions.appendChild(makeBtn('None', []));
-        if (info.definition.default?.length) {
-            actions.appendChild(makeBtn('Default', info.definition.default));
+        if (title) title.textContent = info.definition.label || 'Composite components';
+        if (btnAll) btnAll.onclick = () => { void this.updateCompositeSelection(info.definition.parts); };
+        if (btnNone) btnNone.onclick = () => { void this.updateCompositeSelection([]); };
+        if (btnDefault) {
+            if (info.definition.default?.length) {
+                btnDefault.onclick = () => { void this.updateCompositeSelection(info.definition.default); };
+            } else {
+                btnDefault.remove();
+            }
         }
-        header.appendChild(actions);
-        panel.appendChild(header);
-
-        const grid = document.createElement('div');
-        grid.style.display = 'grid';
-        grid.style.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))';
-        grid.style.gap = '4px';
 
         info.definition.parts.forEach(part => {
             const row = document.createElement('label');
-            row.style.display = 'flex';
-            row.style.alignItems = 'center';
-            row.style.gap = '6px';
+            row.className = 'composite-controls-item';
             const { label, description } = this.getCompositePartMeta(info.definition, part);
 
             const checkbox = document.createElement('input');
@@ -2940,11 +2927,14 @@ class ChoroplethApp {
 
             row.appendChild(checkbox);
             row.appendChild(text);
-            grid.appendChild(row);
+            grid?.appendChild(row);
         });
 
-        panel.appendChild(grid);
-        container.appendChild(panel);
+        if (panel) {
+            container.replaceChildren(fragment);
+        } else {
+            container.replaceChildren(fragment);
+        }
     }
 
     async updateCompositeSelection(partsOverride) {
