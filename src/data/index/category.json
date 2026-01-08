@@ -71,6 +71,32 @@
             "GHSL_POP_11",
             "GHSL_POP_10"
           ],
+          "partLabels":{
+            "GHSL_POP_30":{
+              "label": "Urban centre"
+            },
+            "GHSL_POP_23":{
+              "label": "Dense urban cluster"
+            },
+            "GHSL_POP_22":{
+              "label": "Semi-dense urban cluster"
+            },
+            "GHSL_POP_21":{
+              "label": "Peri-urban"
+            },
+            "GHSL_POP_13":{
+              "label": "Rural cluster"
+            },
+            "GHSL_POP_12":{
+              "label": "Low density rural"
+            },
+            "GHSL_POP_11":{
+              "label": "Very low density rural"
+            },
+            "GHSL_POP_10":{
+              "label": "Water"
+            }
+          },
           "default": ["GHSL_POP_30", "GHSL_POP_23"],
           "label": "DEGURBA components"
         },
@@ -82,7 +108,10 @@
           "domain": [0, 1],
           "legendSteps": 11,
           "format": { "maximumFractionDigits": 1, "notation": "standard" },
-          "interpolation": { "type": "named", "value": "Oranges" }
+          "interpolation": {
+            "type": "named",
+            "value": "Spectral"
+          }
         }
       },
       "ghsl_var": {
@@ -123,6 +152,7 @@
           "scale": "pow",
           "exponent": "2/9",
           "domain": [10000, 3000000],
+          "legendSteps": 7,
           "format": { "specifier": ".4~s" },
           "interpolation": { "type": "named", "value": "viridis" }
         }
@@ -130,7 +160,7 @@
       "gender_ratio": {
         "kind": "uni",
         "label": "Gender ratio",
-        "description": "Women-to-men ratio where W = 100",
+        "description": "Gender ratio, where W=100",
         "field": "POPU_WM",
         "settings": {
           "type": "numeric",
@@ -148,8 +178,8 @@
       },
       "ethnic_ratio": {
         "kind": "uni",
-        "label": "Ethnic minority",
-        "description": "Ethnic minority population rate",
+        "label": "Ethnic minorities",
+        "description": "Ethnic minorities, population rate",
         "field": "POPU_ETHNIC",
         "settings": {
           "type": "numeric",
@@ -187,16 +217,27 @@
         "composite": {
           "op": "sum",
           "parts": ["POPU_REG_C", "POPU_REG_P", "POPU_REG_O"],
+          "partLabels": {
+            "POPU_REG_C": {
+              "label": "Within county"
+            },
+            "POPU_REG_P": {
+              "label": "Within province"
+            },
+            "POPU_REG_O": {
+              "label": "Outside province"
+            }
+          },
           "default": ["POPU_REG_C", "POPU_REG_P", "POPU_REG_O"],
-          "label": "C = Within county, P = Within prov., O = Outside prov."
+          "label": "Hukou location, outside township residence."
         },
         "settings": {
           "type": "numeric",
           "percentage": true,
           "percentageScale": "fraction",
           "scale": "linear",
-          "domain": [0, 1],
-          "legendSteps": 11,
+          "domain": [0, 0.6],
+          "legendSteps": 7,
           "format": { "maximumFractionDigits": 2, "notation": "standard" },
           "interpolation": {
             "type": "named",
@@ -220,7 +261,7 @@
       "literacy_m": {
         "kind": "uni",
         "label": "Illiteracy rate (m)",
-        "description": "Male illiteracy rate",
+        "description": "Male illiteracy rate, aged 15 and above",
         "field": "EDUC_LITR_M",
         "settings": {
           "scale": "pow",
@@ -239,7 +280,7 @@
       "literacy_w": {
         "kind": "uni",
         "label": "Illiteracy rate (w)",
-        "description": "Female illiteracy rate",
+        "description": "Female illiteracy rate, aged 15 and above",
         "field": "EDUC_LITR_W",
         "settings": {
           "scale": "pow",
@@ -257,8 +298,8 @@
       },
       "literacy_mw": {
         "kind": "bivar",
-        "label": "Illiteracy: men/women",
-        "description": "Illiteracy rates, men (x) and women (y)",
+        "label": "Illiteracy (m)/(w)",
+        "description": "Illiteracy rates, men (x) and women (y) aged 15 and above",
         "x": {
           "metricId": "literacy_m",
           "settings": {
@@ -288,7 +329,7 @@
       },
       "avg_years_m": {
         "kind": "uni",
-        "label": "Avg yrs. (m)",
+        "label": "Avg. yrs. (m)",
         "description": "Average years of education, men",
         "field": "EDUC_AVGY_M",
         "settings": {
@@ -320,7 +361,7 @@
       },
       "avg_years_mw": {
         "kind": "bivar",
-        "label": "Education: yrs. men/women",
+        "label": "Avg. yrs. (m)/(w)",
         "description": "Average years of education, men (X) and women (Y)",
         "x": {
           "metricId": "avg_years_m",
@@ -360,7 +401,7 @@
     "metrics": {
       "AGES_0-14": {
         "kind": "uni",
-        "label": "Age 0-14",
+        "label": "Ages 0–14",
         "description": "Proportion of population aged 0 to 14, rate.",
         "field": "AGES_0-14",
         "settings": {
@@ -368,7 +409,8 @@
           "percentage": true,
           "percentageScale": "fraction",
           "type": "numeric",
-          "domain": [0, 1],
+          "domain": [0, 0.5],
+          "legendSteps": 11,
           "binning": {
             "method": "cluster",
             "bins": 5
@@ -382,7 +424,7 @@
       },
       "AGES_15-64": {
         "kind": "uni",
-        "label": "Age 15-64",
+        "label": "Ages 15–64",
         "description": "Proportion of population aged 15 to 64, rate.",
         "field": "AGES_15-64",
         "settings": {
@@ -390,7 +432,8 @@
           "percentage": true,
           "percentageScale": "fraction",
           "type": "numeric",
-          "domain": [0, 1],
+          "domain": [0.5, 0.8],
+          "legendSteps": 7,
           "binning": {
             "method": "cluster",
             "bins": 5
@@ -404,7 +447,7 @@
       },
       "AGES_65P": {
         "kind": "uni",
-        "label": "Age 65+",
+        "label": "Ages ≥65",
         "description": "Proportion of population aged 65 and above, rate.",
         "field": "AGES_65P",
         "settings": {
@@ -412,7 +455,8 @@
           "percentage": true,
           "percentageScale": "fraction",
           "type": "numeric",
-          "domain": [0, 1],
+          "domain": [0, 0.3],
+          "legendSteps": 7,
           "binning": {
             "method": "cluster",
             "bins": 5
@@ -434,7 +478,8 @@
           "percentage": true,
           "percentageScale": "fraction",
           "type": "numeric",
-          "domain": [0, 1],
+          "domain": [0.15, 0.3],
+          "legendSteps": 9,
           "binning": {
             "method": "cluster",
             "bins": 5
@@ -482,6 +527,65 @@
             "AGES_50-54",
             "AGES_55-59"
           ],
+          "partLabels": {
+            "AGES_0": {
+              "label": "Age <1"
+            },
+            "AGES_1-4": {
+              "label": "Ages 1–4"
+            },
+            "AGES_5-9": {
+              "label": "Ages 5–9"
+            },
+            "AGES_10-14": {
+              "label": "Ages 10–14"
+            },
+            "AGES_15-19": {
+              "label": "Ages 15–19"
+            },
+            "AGES_20-24": {
+              "label": "Ages 20–24"
+            },
+            "AGES_25-29": {
+              "label": "Ages 25–29"
+            },
+            "AGES_30-34": {
+              "label": "Ages 30–34"
+            },
+            "AGES_35-39": {
+              "label": "Ages 35–39"
+            },
+            "AGES_40-44": {
+              "label": "Ages 40–44"
+            },
+            "AGES_45-49": {
+              "label": "Ages 45–49"
+            },
+            "AGES_50-54": {
+              "label": "Ages 50–54"
+            },
+            "AGES_55-59": {
+              "label": "Ages 55–59"
+            },
+            "AGES_60-64": {
+              "label": "Ages 60–64"
+            },
+            "AGES_65-69": {
+              "label": "Ages 65–69"
+            },
+            "AGES_70-74": {
+              "label": "Ages 70–74"
+            },
+            "AGES_75-79": {
+              "label": "Ages 75–79"
+            },
+            "AGES_80-84": {
+              "label": "Ages 80–84"
+            },
+            "AGES_85P": {
+              "label": "Ages ≥85"
+            }
+          },
           "label": "Age brackets"
         },
         "settings": {
@@ -490,6 +594,7 @@
           "percentageScale": "fraction",
           "scale": "linear",
           "domain": [0, 1],
+          "legendSteps": 11,
           "binning": {
             "method": "cluster",
             "bins": 5
@@ -525,9 +630,11 @@
           "scale": "linear",
           "type": "numeric",
           "binning": {
-            "method": "breakpoints",
-            "breakpoints": [35, 42, 50, 60]
+            "method": "cluster",
+            "bins": 5
           },
+          "domain": [30, 80],
+          "legendSteps": 11,
           "format": { "maximumFractionDigits": 2, "notation": "standard" },
           "interpolation": {
             "type": "named",
@@ -543,7 +650,8 @@
         "settings": {
           "scale": "linear",
           "type": "numeric",
-          "domain": [0, 5],
+          "domain": [2, 5],
+          "legendSteps": 11,
           "binning": {
             "method": "cluster",
             "bins": 5
@@ -698,6 +806,23 @@
             "HOUS_SAMP_INHE",
             "HOUS_SAMP_OTHR"
           ],
+          "partLabels":{
+            "HOUS_SAMP_LEAS":{
+              "label": "Leased"
+            },
+            "HOUS_SAMP_SELF":{
+              "label": "Self-built"
+            },
+            "HOUS_SAMP_BUY":{
+              "label": "Purchased"
+            },
+            "HOUS_SAMP_INHE":{
+              "label": "Inherited"
+            },
+            "HOUS_SAMP_OTHR":{
+              "label": "Other"
+            }
+          },
           "default": ["HOUS_SAMP_LEAS"],
           "label": "Housing sources"
         },
@@ -824,7 +949,8 @@
         "settings": {
           "scale": "linear",
           "type": "numeric",
-          "domain": [0, 1],
+          "domain": [0.7, 1],
+          "legendSteps": 7,
           "percentage": true,
           "percentageScale": "fraction",
           "binning": {
@@ -849,7 +975,8 @@
         "settings": {
           "scale": "linear",
           "type": "numeric",
-          "domain": [1, 3],
+          "domain": [1, 5],
+          "legendSteps": 9,
           "binning": {
             "method": "cluster",
             "bins": 5
@@ -866,13 +993,14 @@
       },
       "HHLD_1P": {
         "kind": "uni",
-        "label": "1P hhld",
+        "label": "HH(1P)",
         "description": "One-person households, ratio",
         "field": "HHLD_1P",
         "settings": {
           "scale": "linear",
           "type": "numeric",
-          "domain": [0, 1],
+          "domain": [0, 0.5],
+          "legendSteps": 11,
           "percentage": true,
           "percentageScale": "fraction",
           "binning": {
@@ -896,13 +1024,28 @@
         "composite": {
           "op": "sum",
           "parts": ["HHLD_1G", "HHLD_2G", "HHLD_3G", "HHLD_4GP"],
+          "partLabels":{
+            "HHLD_1G": {
+              "label": "1 generation"
+            },
+            "HHLD_2G": {
+              "label": "2 generations"
+            },
+            "HHLD_3G": {
+              "label": "3 generations"
+            },
+            "HHLD_4GP": {
+              "label": "≥4 generations"
+            }
+          },
           "default": ["HHLD_2G"],
-          "label": "Household generation"
+          "label": "Generation(s) in household"
         },
         "settings": {
           "scale": "linear",
           "type": "numeric",
           "domain": [0, 1],
+          "legendSteps": 11,
           "percentage": true,
           "percentageScale": "fraction",
           "binning": {
@@ -921,13 +1064,14 @@
       },
       "HHLD_65": {
         "kind": "uni",
-        "label": "65 aged in hhld",
+        "label": "HH(≥65)",
         "description": "Households with 65 aged, ratio",
         "field": "HHLD_65",
         "settings": {
           "scale": "linear",
           "type": "numeric",
           "domain": [0, 1],
+          "legendSteps": 11,
           "percentage": true,
           "percentageScale": "fraction",
           "binning": {
@@ -946,14 +1090,15 @@
       },
       "HHLD_65_HHVE": {
         "kind": "bivar",
-        "label": "65 HHLDs to vehic.",
-        "description": "Elderly in households (x), to vehicle ownership (sample) (y)",
+        "label": "Vehic. to HH(≥65)",
+        "description": "Vehicle ownership (sample) (x), to elderly in households (sample) (y)",
         "x": {
           "metricId": "HOUS_SAMP_HHVE",
           "category": "housing",
           "settings": {
             "paletteSteps": 5,
             "domain": [0, 0.5],
+            "legendSteps": 11,
             "scale": "linear",
             "type": "numeric",
             "percentage": true,
@@ -970,6 +1115,7 @@
           "settings": {
             "paletteSteps": 5,
             "domain": [0, 0.5],
+            "legendSteps": 11,
             "scale": "linear",
             "type": "numeric",
             "percentage": true,
@@ -1004,7 +1150,8 @@
         "settings": {
           "scale": "linear",
           "type": "numeric",
-          "domain": [0, 1],
+          "domain": [0.3, 0.9],
+          "legendSteps": 13,
           "percentage": true,
           "percentageScale": "fraction",
           "binning": {
@@ -1071,6 +1218,7 @@
           "percentageScale": "fraction",
           "scale": "linear",
           "domain": [0, 1],
+          "legendSteps": 11,
           "binning": {
             "method": "cluster",
             "bins": 5
@@ -1191,6 +1339,7 @@
           "percentageScale": "fraction",
           "scale": "linear",
           "domain": [0, 1],
+          "legendSteps": 11,
           "binning": {
             "method": "cluster",
             "bins": 5
