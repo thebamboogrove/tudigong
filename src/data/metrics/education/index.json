@@ -38,9 +38,16 @@
   ],
   "stringProperties": [],
   "packs": {
+    "pack-default": {
+      "file": "pack-default.bin",
+      "byteLength": 11960,
+      "metrics": [
+        "EDUC_LITR_M"
+      ]
+    },
     "pack-0": {
       "file": "pack-0.bin",
-      "byteLength": 322920,
+      "byteLength": 310960,
       "metrics": [
         "EDUC_NULL",
         "EDUC_NULL_M",
@@ -67,12 +74,26 @@
         "EDUC_AVGY_M",
         "EDUC_AVGY_W",
         "EDUC_LITR",
-        "EDUC_LITR_M",
         "EDUC_LITR_W"
       ]
     }
   },
   "metrics": {
+    "EDUC_LITR_M": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-default",
+      "offset": 0,
+      "length": 2990,
+      "stats": {
+        "min": 0,
+        "max": 0.24351,
+        "mean": 0.014068521244563391,
+        "median": 0.006850000005215406,
+        "count": 2989,
+        "missingCount": 1
+      }
+    },
     "EDUC_NULL": {
       "kind": "numeric",
       "dtype": "float32",
@@ -448,26 +469,11 @@
         "missingCount": 1
       }
     },
-    "EDUC_LITR_M": {
-      "kind": "numeric",
-      "dtype": "float32",
-      "pack": "pack-0",
-      "offset": 299000,
-      "length": 2990,
-      "stats": {
-        "min": 0,
-        "max": 0.24351,
-        "mean": 0.014068521244563391,
-        "median": 0.006850000005215406,
-        "count": 2989,
-        "missingCount": 1
-      }
-    },
     "EDUC_LITR_W": {
       "kind": "numeric",
       "dtype": "float32",
       "pack": "pack-0",
-      "offset": 310960,
+      "offset": 299000,
       "length": 2990,
       "stats": {
         "min": 0,

@@ -22,11 +22,17 @@
   ],
   "stringProperties": [],
   "packs": {
+    "pack-default": {
+      "file": "pack-default.bin",
+      "byteLength": 11960,
+      "metrics": [
+        "HHLD_R"
+      ]
+    },
     "pack-0": {
       "file": "pack-0.bin",
-      "byteLength": 131560,
+      "byteLength": 119600,
       "metrics": [
-        "HHLD_R",
         "HHLD_S",
         "HHLD_1P",
         "HHLD_1G",
@@ -44,7 +50,7 @@
     "HHLD_R": {
       "kind": "numeric",
       "dtype": "float32",
-      "pack": "pack-0",
+      "pack": "pack-default",
       "offset": 0,
       "length": 2990,
       "stats": {
@@ -60,7 +66,7 @@
       "kind": "numeric",
       "dtype": "float32",
       "pack": "pack-0",
-      "offset": 11960,
+      "offset": 0,
       "length": 2990,
       "stats": {
         "min": 1,
@@ -75,7 +81,7 @@
       "kind": "numeric",
       "dtype": "float32",
       "pack": "pack-0",
-      "offset": 23920,
+      "offset": 11960,
       "length": 2990,
       "stats": {
         "min": 0.0965,
@@ -90,7 +96,7 @@
       "kind": "numeric",
       "dtype": "float32",
       "pack": "pack-0",
-      "offset": 35880,
+      "offset": 23920,
       "length": 2990,
       "stats": {
         "min": 0.1874,
@@ -105,7 +111,7 @@
       "kind": "numeric",
       "dtype": "float32",
       "pack": "pack-0",
-      "offset": 47840,
+      "offset": 35880,
       "length": 2990,
       "stats": {
         "min": 0,
@@ -120,7 +126,7 @@
       "kind": "numeric",
       "dtype": "float32",
       "pack": "pack-0",
-      "offset": 59800,
+      "offset": 47840,
       "length": 2990,
       "stats": {
         "min": 0,
@@ -135,7 +141,7 @@
       "kind": "numeric",
       "dtype": "float32",
       "pack": "pack-0",
-      "offset": 71760,
+      "offset": 59800,
       "length": 2990,
       "stats": {
         "min": 0,
@@ -150,7 +156,7 @@
       "kind": "numeric",
       "dtype": "float32",
       "pack": "pack-0",
-      "offset": 83720,
+      "offset": 71760,
       "length": 2990,
       "stats": {
         "min": 0,
@@ -165,7 +171,7 @@
       "kind": "numeric",
       "dtype": "float32",
       "pack": "pack-0",
-      "offset": 95680,
+      "offset": 83720,
       "length": 2990,
       "stats": {
         "min": 0,
@@ -180,7 +186,7 @@
       "kind": "numeric",
       "dtype": "float32",
       "pack": "pack-0",
-      "offset": 107640,
+      "offset": 95680,
       "length": 2990,
       "stats": {
         "min": 0,
@@ -195,7 +201,7 @@
       "kind": "numeric",
       "dtype": "float32",
       "pack": "pack-0",
-      "offset": 119600,
+      "offset": 107640,
       "length": 2990,
       "stats": {
         "min": 0,

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "category": "housing",
-  "count": 2990,
+  "count": 2991,
   "idField": "CODE",
   "idsFile": "../../core/ids.json",
   "namesFile": "../../core/names.json",
@@ -24,12 +24,18 @@
   ],
   "stringProperties": [],
   "packs": {
+    "pack-default": {
+      "file": "pack-default.bin",
+      "byteLength": 11964,
+      "metrics": [
+        "HOUS_SMPP"
+      ]
+    },
     "pack-0": {
       "file": "pack-0.bin",
-      "byteLength": 155480,
+      "byteLength": 143568,
       "metrics": [
         "HOUS_ROOM",
-        "HOUS_SMPP",
         "HOUS_SAMP_WATR",
         "HOUS_SAMP_KTCH",
         "HOUS_SAMP_WC",
@@ -45,199 +51,199 @@
     }
   },
   "metrics": {
-    "HOUS_ROOM": {
-      "kind": "numeric",
-      "dtype": "float32",
-      "pack": "pack-0",
-      "offset": 0,
-      "length": 2990,
-      "stats": {
-        "min": 0,
-        "max": 8.5,
-        "mean": 3.3065585284280883,
-        "median": 3.25,
-        "count": 2990,
-        "missingCount": 0
-      }
-    },
     "HOUS_SMPP": {
       "kind": "numeric",
       "dtype": "float32",
-      "pack": "pack-0",
-      "offset": 11960,
-      "length": 2990,
+      "pack": "pack-default",
+      "offset": 0,
+      "length": 2991,
       "stats": {
         "min": 0,
         "max": 106.09,
         "mean": 41.53265551839461,
         "median": 40.290000915527344,
         "count": 2990,
-        "missingCount": 0
+        "missingCount": 1
+      }
+    },
+    "HOUS_ROOM": {
+      "kind": "numeric",
+      "dtype": "float32",
+      "pack": "pack-0",
+      "offset": 0,
+      "length": 2991,
+      "stats": {
+        "min": 0,
+        "max": 8.5,
+        "mean": 3.3065585284280883,
+        "median": 3.25,
+        "count": 2990,
+        "missingCount": 1
       }
     },
     "HOUS_SAMP_WATR": {
       "kind": "numeric",
       "dtype": "float32",
       "pack": "pack-0",
-      "offset": 23920,
-      "length": 2990,
+      "offset": 11964,
+      "length": 2991,
       "stats": {
         "min": 0.0072,
         "max": 1,
         "mean": 0.8914263651591295,
         "median": 0.9488000273704529,
         "count": 2985,
-        "missingCount": 5
+        "missingCount": 6
       }
     },
     "HOUS_SAMP_KTCH": {
       "kind": "numeric",
       "dtype": "float32",
       "pack": "pack-0",
-      "offset": 35880,
-      "length": 2990,
+      "offset": 23928,
+      "length": 2991,
       "stats": {
         "min": 0.176,
         "max": 1,
         "mean": 0.9541786264656602,
         "median": 0.9819999933242798,
         "count": 2985,
-        "missingCount": 5
+        "missingCount": 6
       }
     },
     "HOUS_SAMP_WC": {
       "kind": "numeric",
       "dtype": "float32",
       "pack": "pack-0",
-      "offset": 47840,
-      "length": 2990,
+      "offset": 35892,
+      "length": 2991,
       "stats": {
         "min": 0.0232,
         "max": 1,
         "mean": 0.9465613400335022,
         "median": 0.9786999821662903,
         "count": 2985,
-        "missingCount": 5
+        "missingCount": 6
       }
     },
     "HOUS_SAMP_BATH": {
       "kind": "numeric",
       "dtype": "float32",
       "pack": "pack-0",
-      "offset": 59800,
-      "length": 2990,
+      "offset": 47856,
+      "length": 2991,
       "stats": {
         "min": 0,
         "max": 1,
         "mean": 0.8264172864321607,
         "median": 0.9144999980926514,
         "count": 2985,
-        "missingCount": 5
+        "missingCount": 6
       }
     },
     "HOUS_SAMP_BDEL": {
       "kind": "numeric",
       "dtype": "float32",
       "pack": "pack-0",
-      "offset": 71760,
-      "length": 2990,
+      "offset": 59820,
+      "length": 2991,
       "stats": {
         "min": 0,
         "max": 1,
         "mean": 0.14776110552763855,
         "median": 0.09179999679327011,
         "count": 2985,
-        "missingCount": 5
+        "missingCount": 6
       }
     },
     "HOUS_SAMP_HHVE": {
       "kind": "numeric",
       "dtype": "float32",
       "pack": "pack-0",
-      "offset": 83720,
-      "length": 2990,
+      "offset": 71784,
+      "length": 2991,
       "stats": {
         "min": 0.0655,
         "max": 0.8602,
         "mean": 0.39841222780569485,
         "median": 0.3952000141143799,
         "count": 2985,
-        "missingCount": 5
+        "missingCount": 6
       }
     },
     "HOUS_SAMP_LEAS": {
       "kind": "numeric",
       "dtype": "float32",
       "pack": "pack-0",
-      "offset": 95680,
-      "length": 2990,
+      "offset": 83748,
+      "length": 2991,
       "stats": {
         "min": 0,
         "max": 0.8898,
         "mean": 0.10242552763819121,
         "median": 0.06970000267028809,
         "count": 2985,
-        "missingCount": 5
+        "missingCount": 6
       }
     },
     "HOUS_SAMP_SELF": {
       "kind": "numeric",
       "dtype": "float32",
       "pack": "pack-0",
-      "offset": 107640,
-      "length": 2990,
+      "offset": 95712,
+      "length": 2991,
       "stats": {
         "min": 0,
         "max": 0.9849,
         "mean": 0.5072667671691791,
         "median": 0.5748000144958496,
         "count": 2985,
-        "missingCount": 5
+        "missingCount": 6
       }
     },
     "HOUS_SAMP_BUY": {
       "kind": "numeric",
       "dtype": "float32",
       "pack": "pack-0",
-      "offset": 119600,
-      "length": 2990,
+      "offset": 107676,
+      "length": 2991,
       "stats": {
         "min": 0,
         "max": 0.9138,
         "mean": 0.3261146733668342,
         "median": 0.2720000147819519,
         "count": 2985,
-        "missingCount": 5
+        "missingCount": 6
       }
     },
     "HOUS_SAMP_INHE": {
       "kind": "numeric",
       "dtype": "float32",
       "pack": "pack-0",
-      "offset": 131560,
-      "length": 2990,
+      "offset": 119640,
+      "length": 2991,
       "stats": {
         "min": 0,
         "max": 0.5158,
         "mean": 0.012272361809045205,
         "median": 0.008299999870359898,
         "count": 2985,
-        "missingCount": 5
+        "missingCount": 6
       }
     },
     "HOUS_SAMP_OTHR": {
       "kind": "numeric",
       "dtype": "float32",
       "pack": "pack-0",
-      "offset": 143520,
-      "length": 2990,
+      "offset": 131604,
+      "length": 2991,
       "stats": {
         "min": 0,
         "max": 0.7103,
         "mean": 0.05192174204355106,
         "median": 0.02879999950528145,
         "count": 2985,
-        "missingCount": 5
+        "missingCount": 6
       }
     }
   }

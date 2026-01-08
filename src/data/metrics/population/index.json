@@ -18,11 +18,17 @@
   ],
   "stringProperties": [],
   "packs": {
+    "pack-default": {
+      "file": "pack-default.bin",
+      "byteLength": 11960,
+      "metrics": [
+        "POPU"
+      ]
+    },
     "pack-0": {
       "file": "pack-0.bin",
-      "byteLength": 83720,
+      "byteLength": 71760,
       "metrics": [
-        "POPU",
         "POPU_WM",
         "POPU_ETHNIC",
         "POPU_URB",
@@ -36,7 +42,7 @@
     "POPU": {
       "kind": "numeric",
       "dtype": "float32",
-      "pack": "pack-0",
+      "pack": "pack-default",
       "offset": 0,
       "length": 2990,
       "stats": {
@@ -52,7 +58,7 @@
       "kind": "numeric",
       "dtype": "float32",
       "pack": "pack-0",
-      "offset": 11960,
+      "offset": 0,
       "length": 2990,
       "stats": {
         "min": 77.75,
@@ -67,7 +73,7 @@
       "kind": "numeric",
       "dtype": "float32",
       "pack": "pack-0",
-      "offset": 23920,
+      "offset": 11960,
       "length": 2990,
       "stats": {
         "min": 0.0003,
@@ -82,7 +88,7 @@
       "kind": "numeric",
       "dtype": "float32",
       "pack": "pack-0",
-      "offset": 35880,
+      "offset": 23920,
       "length": 2990,
       "stats": {
         "min": 0.0144,
@@ -97,7 +103,7 @@
       "kind": "numeric",
       "dtype": "float32",
       "pack": "pack-0",
-      "offset": 47840,
+      "offset": 35880,
       "length": 2990,
       "stats": {
         "min": 0,
@@ -112,7 +118,7 @@
       "kind": "numeric",
       "dtype": "float32",
       "pack": "pack-0",
-      "offset": 59800,
+      "offset": 47840,
       "length": 2990,
       "stats": {
         "min": 0.0054,
@@ -127,7 +133,7 @@
       "kind": "numeric",
       "dtype": "float32",
       "pack": "pack-0",
-      "offset": 71760,
+      "offset": 59800,
       "length": 2990,
       "stats": {
         "min": 0.0013,

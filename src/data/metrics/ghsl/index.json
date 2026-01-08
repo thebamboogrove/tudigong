@@ -3,8 +3,8 @@
   "category": "ghsl",
   "count": 2990,
   "idField": "CODE",
-  "idsFile": "ids.json",
-  "namesFile": null,
+  "idsFile": "../../core/ids.json",
+  "namesFile": "../../core/names.json",
   "nameField": "NAME",
   "stringsFile": "strings.json",
   "numericProperties": [
