@@ -3,8 +3,8 @@
   "category": "ghsl",
   "count": 2990,
   "idField": "CODE",
-  "idsFile": "../../core/ids.json",
-  "namesFile": "../../core/names.json",
+  "idsFile": "ids.json",
+  "namesFile": null,
   "nameField": "NAME",
   "stringsFile": "strings.json",
   "numericProperties": [
@@ -57,9 +57,9 @@
       "length": 2990,
       "stats": {
         "min": 0,
-        "max": 8797461,
-        "mean": 468405.483277592,
-        "median": 364303,
+        "max": 8836959,
+        "mean": 476899.6056856187,
+        "median": 370796,
         "count": 2990,
         "missingCount": 0
       }
@@ -72,9 +72,9 @@
       "length": 2990,
       "stats": {
         "min": 0,
-        "max": 42965.7,
-        "mean": 1053.860702341136,
-        "median": 305.20001220703125,
+        "max": 46837.4,
+        "mean": 1118.6201337792631,
+        "median": 309.1000061035156,
         "count": 2990,
         "missingCount": 0
       }
@@ -222,9 +222,9 @@
       "length": 2990,
       "stats": {
         "min": -1,
-        "max": 59.4444,
-        "mean": 0.06006122448979593,
-        "median": 0.02710000053048134,
+        "max": 60.0269,
+        "mean": 0.07866744730679147,
+        "median": 0.04089999943971634,
         "count": 2989,
         "missingCount": 1
       }

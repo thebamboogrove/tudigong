@@ -29,7 +29,7 @@ With additions affecting roughly 190 standard county-level divisions.
 \varphi_2 = 48\degree 00'00"{\mathrm{N}}\qquad
 {\mathrm{\lambda}}_0 = 104\degree 30'00"{\mathrm{E}}`$
 
-> GHSL data for 2990 county-level divisions R<sup>2</sup>≈0.8747, y=0.9922x6741, MAE=84020 & RMSE=162112
+> GHSL data for 2990 county-level divisions R<sup>2</sup>≈0.8761, y=0.9769x5652, MAE=84258 & RMSE=161217
 
 > Un-official administrative and statistical code format:
 > | X | X | Y | Y | 7 | Z |
