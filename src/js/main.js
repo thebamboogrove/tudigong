@@ -3162,7 +3162,7 @@ class RangeFilterControlElement extends HTMLElement {
                 ? `≥ ${this.formatValue(this.domain.max)}`
                 : this.formatValue(vMax);
 
-            this.dom.valDisplay.textContent = `${left} – ${right}`;
+            this.dom.valDisplay.textContent = `${left} to ${right}`;
         }
     }
     #renderAxis(dmin, dmax) {

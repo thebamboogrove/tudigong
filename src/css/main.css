@@ -811,10 +811,19 @@ range-filter-control .range-fields input[type="text"] {
     font-size: 0.8em;
 }
 
+range-filter-control .range-filter-label, range-filter-control span.filter-value-display {
+    line-height: 1em;
+    display: block;
+}
+
+range-filter-control .range-filter-label {
+    font-weight: 600;
+}
+
 range-filter-control span.filter-value-display {
-    padding-right: 1em;
-    line-height: 0;
-    color: #495057;
+    color: #746461;
+    padding-top: 0.4ch;
+    padding-left: 1ch;
 }
 
 .text-container {
