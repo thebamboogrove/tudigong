@@ -545,6 +545,8 @@ class MapRenderer {
         this._hoveredFeature = null;
         this._hoveredFeatureId = null;
         this._legendCache = null;
+        this.currentZoom = null;
+        this._borderWidthCache = null;
     }
 
     getDpr() {
@@ -553,6 +555,45 @@ class MapRenderer {
 
     getCanvasDpr(dprCap = 2) {
         return Math.min(dprCap, this.getDpr());
+    }
+
+    getBorderWidths(zoom = null) {
+        const baseZoom = Number.isFinite(this.baseZoom) ? this.baseZoom : 0;
+        const z = Number.isFinite(zoom)
+            ? zoom
+            : (Number.isFinite(this.currentZoom) ? this.currentZoom : baseZoom);
+        const span = 10;
+        const tRaw = span > 0 ? (z - baseZoom) / span : 0;
+        const t = Math.max(0, Math.min(1, tRaw));
+        const countyMin = 0.4;
+        const countyMax = 1.4;
+        const provinceMin = 0.6;
+        const provinceMax = 3;
+        const widthBoundary = (a, b) => a + (b - a) * t;
+        return {
+            county: widthBoundary(countyMin, countyMax),
+            province: widthBoundary(provinceMin, provinceMax)
+        };
+    }
+
+    updateBorderWidths(zoom) {
+        const z = Number.isFinite(zoom)
+            ? zoom
+            : (Number.isFinite(this.currentZoom) ? this.currentZoom : this.baseZoom);
+        const widths = this.getBorderWidths(z);
+        const rounded = {
+            county: Math.round(widths.county * 100) / 100,
+            province: Math.round(widths.province * 100) / 100
+        };
+        const prev = this._borderWidthCache;
+        if (prev && prev.county === rounded.county && prev.province === rounded.province) {
+            this.currentZoom = z;
+            return;
+        }
+        this.currentZoom = z;
+        this._borderWidthCache = rounded;
+        this._borderLayers = null;
+        if (this.deckgl) this.refreshLayers();
     }
 
     debounce(fn, ms = 150) {
@@ -795,9 +836,12 @@ class MapRenderer {
             ? this.computeViewFromBounds(options.bounds, container)
             : { target: [0, 0, 0], zoom: 0, pitch: 0, bearing: 0 };
         this.baseZoom = initialViewState.zoom ?? 0;
+        this.currentZoom = initialViewState.zoom ?? 0;
+        this.updateBorderWidths(this.currentZoom);
         console.log('Base zoom: ' + this.baseZoom);
 
         this.deckgl = new Deck({
+            useDevicePixels: false,
             parent: container,
             views: [new OrthographicView({ id: 'ortho', flipY: false })],
             initialViewState,
@@ -805,6 +849,9 @@ class MapRenderer {
             layerFilter: ({layer, viewport}) => {
                 if (layer.id === 'borders-county') return viewport.zoom >= (this.baseZoom + 3);
                 return true;
+            },
+            onViewStateChange: ({ viewState }) => {
+                this.updateBorderWidths(viewState?.zoom);
             },
             onHover: this.onHover.bind(this),
             onClick: info => console.log('Clicked:', info.object)
@@ -1406,30 +1453,33 @@ class MapRenderer {
         }
 
         if (!this._borderLayers) {
+            const borderWidths = this._borderWidthCache || this.getBorderWidths();
+            const countyWidth = borderWidths.county;
+            const provinceWidth = borderWidths.province;
             this._borderLayers = [
                 new PathLayer({
                     id: 'borders-county',
                     data: app.boundaryManager.countyPaths || [],
                     coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
                     getPath: d => d, getColor: [55, 55, 55, 255],
-                    getWidth: 14,
-                    widthUnits: "meters",
-                    widthMinPixels: 1,
-                    widthMaxPixels: 4,
-                    widthScale: 50,
-                    jointRounded: true
+                    getWidth: countyWidth,
+                    widthUnits: "pixels",
+                    jointRounded: false,
+                    capRounded: false,
+                    fp64: false,
+                    pickable: false,
                 }),
                 new PathLayer({
                     id: 'borders-province',
                     data: app.boundaryManager.provincePaths || [],
                     coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
                     getPath: d => d, getColor: [30, 30, 30, 255],
-                    getWidth: 28,
-                    widthUnits: "meters",
-                    widthMinPixels: 1,
-                    widthMaxPixels: 6,
-                    widthScale: 60,
-                    jointRounded: true
+                    getWidth: provinceWidth,
+                    widthUnits: "pixels",
+                    jointRounded: false,
+                    capRounded: false,
+                    fp64: false,
+                    pickable: false,
                 }),
                 new PathLayer({
                     id: 'borders-extra',
@@ -1441,11 +1491,8 @@ class MapRenderer {
                     dashGapPickable: true,
                     pickable: false,
                     extensions: [new PathStyleExtension({highPrecisionDash: true})],
-                    getWidth: 28,
-                    widthUnits: "meters",
-                    widthMinPixels: 1,
-                    widthMaxPixels: 6,
-                    widthScale: 60,
+                    getWidth: provinceWidth,
+                    widthUnits: "pixels",
                     jointRounded: true,
                     capRounded: true
                 }),
