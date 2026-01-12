@@ -1507,31 +1507,50 @@ class MapRenderer {
         }
     }
 
-    buildHighlightLayer() {
+    buildHighlightLayers() {
         if (!this._hoveredFeature) return null;
-        return new GeoJsonLayer({
-            id: 'hover-highlight',
-            data: [this._hoveredFeature],
+        const data = [this._hoveredFeature];
+
+        const shared = {
+            data,
             coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
             filled: false,
             stroked: true,
             pickable: false,
-            getLineColor: [255, 55, 55, 230],
-            getLineWidth: 2,
-            lineWidthUnits: 'pixels',
+            lineCapRounded: true,
+            lineJointRounded: true,
+            lineWidthUnits: "pixels",
+            parameters: { depthTest: false },
+        };
+
+        const outlineStroke = new GeoJsonLayer({
+            id: 'hover-highlight-outline',
+            ...shared,
+            getLineColor: [225, 225, 225],
+            getLineWidth: 5,
             lineWidthMinPixels: 3,
+            lineWidthMaxPixels: 8
+        })
+
+        const coreStroke = new GeoJsonLayer({
+            id: 'hover-highlight-core',
+            ...shared,
+            getLineColor: [225, 65, 65],
+            getLineWidth: 2,
+            lineWidthMinPixels: 2,
             lineWidthMaxPixels: 6
         });
+        return [outlineStroke, coreStroke]
     }
 
     refreshLayers() {
         this.ensureStaticLayers();
-        const highlightLayer = this.buildHighlightLayer();
+        const highlightLayers = this.buildHighlightLayers();
         const layers = [
             ...this._baseLayers,
             ...(this._mainLayers || []),
             ...this._borderLayers,
-            ...(highlightLayer ? [highlightLayer] : [])
+            ...(highlightLayers ? [highlightLayers] : [])
         ];
         this.deckgl.setProps({ layers });
     }
