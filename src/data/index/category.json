@@ -359,6 +359,22 @@
           }
         }
       },
+      "EDUC_AVGY": {
+        "kind": "uni",
+        "label": "Avg. yrs.",
+        "description": "Average years of education",
+        "field": "EDUC_AVGY",
+        "settings": {
+          "scale": "linear",
+          "type": "numeric",
+          "domain": [5, 15],
+          "legendSteps": 11,
+          "interpolation": {
+            "type": "named",
+            "value": "Spectral"
+          }
+        }
+      },
       "avg_years_mw": {
         "kind": "bivar",
         "label": "Avg. yrs. (m)/(w)",
@@ -938,7 +954,8 @@
       "HHLD_1P",
       "HHLD_gen_sum",
       "HHLD_65",
-      "HHLD_65_HHVE"
+      "HHLD_65_HHVE",
+      "HHLD_1P_AVGY"
     ],
     "metrics": {
       "HHLD_R": {
@@ -1093,7 +1110,7 @@
         "label": "Vehic. to HH(≥65)",
         "description": "Vehicle ownership (sample) (x), to elderly in households (sample) (y)",
         "x": {
-          "metricId": "HOUS_SAMP_HHVE",
+          "metricId": "HOUS_SAMP_HHVE",          
           "category": "housing",
           "settings": {
             "paletteSteps": 5,
@@ -1133,6 +1150,56 @@
             ["#8faee8", "#8faecd", "#8faeac", "#8fae81", "#8fae31"],
             ["#bccbe8", "#bccbcd", "#bccbac", "#bccb81", "#bccb31"],
             ["#e8e8e8", "#e8e8cd", "#e8e8ac", "#e8e881", "#e8e831"]
+          ]
+        }
+      },
+      "HHLD_1P_AVGY": {
+        "kind": "bivar",
+        "label": "Avg yrs. to HH(1P)",
+        "description": "Average years in education (x), to one-person household ratio (y)",
+        "x": {
+          "metricId": "EDUC_AVGY",
+          "category": "education",
+          "settings": {
+            "paletteSteps": 5,
+            "domain": [5, 15],
+            "legendSteps": 11,
+            "scale": "linear",
+            "type": "numeric",
+            "binning": {
+              "method": "cluster",
+              "bins": 5
+            }
+          }
+        },
+        "y": {
+          "metricId": "HHLD_1P",
+          "category": "households",
+          "settings": {
+            "paletteSteps": 5,
+            "format": {
+              "notation": "compact",
+              "maximumFractionDigits": 1
+            },
+            "domain": [0, 0.5],
+            "legendSteps": 11,
+            "scale": "linear",
+            "type": "numeric",
+            "percentage": true,
+            "percentageScale": "fraction",
+            "binning": {
+              "method": "cluster",
+              "bins": 5
+            }
+          }
+        },
+        "method": {
+          "palette": [
+            ["#bf8115", "#bf8115", "#9a8115", "#728115", "#488115"],
+            ["#ca9c4c", "#c19c4c", "#9a9c4c", "#729c4c", "#48944c"],
+            ["#d4b681", "#c1b681", "#9ab681", "#72aa81", "#489481"],
+            ["#decfb5", "#c1cfb5", "#9abfb5", "#72aab5", "#4894b5"],
+            ["#e8e8e8", "#c1d4e6", "#9abfe4", "#72aae2", "#4894e0"]
           ]
         }
       }
