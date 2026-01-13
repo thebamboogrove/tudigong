@@ -1177,6 +1177,10 @@
           "category": "households",
           "settings": {
             "paletteSteps": 5,
+            "format": {
+              "notation": "compact",
+              "maximumFractionDigits": 1
+            },
             "domain": [0, 0.5],
             "legendSteps": 11,
             "scale": "linear",
@@ -1191,11 +1195,11 @@
         },
         "method": {
           "palette": [
-            ["#52a1e8", "#52a1c6", "#52a1a2", "#527b7a", "#524846"],
-            ["#7ab4e8", "#7ab4c6", "#7aa3a2", "#7a7b7a", "#7a4846"],
-            ["#9fc6e8", "#9fc6c6", "#9fa3a2", "#9f7b7a", "#9f4846"],
-            ["#c4d7e8", "#c4c6c6", "#c4a3a2", "#c47b7a", "#c44846"],
-            ["#e8e8e8", "#e8c6c6", "#e8a3a2", "#e87b7a", "#e84846"]
+            ["#bf8115", "#bf8115", "#9a8115", "#728115", "#488115"],
+            ["#ca9c4c", "#c19c4c", "#9a9c4c", "#729c4c", "#48944c"],
+            ["#d4b681", "#c1b681", "#9ab681", "#72aa81", "#489481"],
+            ["#decfb5", "#c1cfb5", "#9abfb5", "#72aab5", "#4894b5"],
+            ["#e8e8e8", "#c1d4e6", "#9abfe4", "#72aae2", "#4894e0"]
           ]
         }
       }
