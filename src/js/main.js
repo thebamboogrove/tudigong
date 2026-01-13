@@ -1,20 +1,26 @@
 import * as d3 from 'd3';
 import { ckmeans } from 'simple-statistics';
 import { Deck, OrthographicView, COORDINATE_SYSTEM } from '@deck.gl/core';
-import { GeoJsonLayer, PathLayer, PolygonLayer } from '@deck.gl/layers';
+import { GeoJsonLayer, PathLayer } from '@deck.gl/layers';
 import { PathStyleExtension } from '@deck.gl/extensions';
 import { feature as topojsonFeature, mesh as topojsonMesh } from 'topojson-client';
 
 class BoundaryManager {
     constructor() {
-        this.boundaries = null;
-        this.features = null;
-        this.featureIndex = new Map();
-        this.bounds = null;
-        this.countryFeatures = null;
-        this.provinceMeshFeature = null;
-        this.extraPaths = null;
-        this.tendashPaths = null;
+        Object.assign(this, this.#initState());
+    }
+
+    #initState() {
+        return {
+            boundaries: null,
+            features: null,
+            featureIndex: new Map(),
+            bounds: null,
+            countryFeatures: null,
+            provinceMeshFeature: null,
+            extraPaths: null,
+            tendashPaths: null
+        };
     }
 
     async loadBoundaries() {
@@ -180,11 +186,17 @@ class BoundaryManager {
 
 class DataManager {
     constructor() {
-        this.cache = new Map();
-        this.indexes = new Map();
-        this.loadingPromises = new Map();
-        this.compositeCache = new Map();
-        this.packCache = new Map();
+        Object.assign(this, this.#initState());
+    }
+
+    #initState() {
+        return {
+            cache: new Map(),
+            indexes: new Map(),
+            loadingPromises: new Map(),
+            compositeCache: new Map(),
+            packCache: new Map()
+        };
     }
 
     async initialize() {
@@ -500,53 +512,111 @@ class MapRenderer {
     constructor(containerId) {
         this.containerId = containerId;
         this.deckgl = null;
-        this.currentData = null;
-        this.currentMetric = null;
-        this.currentMetricId = null;
-        this.currentMetricLabel = null;
-        this.currentMetricDescription = null;
-        this.currentMetricSettings = null;
 
-        this.bivar = null;
-        this.bivarValuesX = null;
-        this.bivarValuesY = null;
-        this.bivarData = null;
-        this.bivarCfg = null;
+        this.dataState = this.#initDataState();
+        this.bivarState = this.#initBivarState();
+        this.tooltipState = this.#initTooltipState();
+        this.filterState = this.#initFilterState();
+        this.cacheState = this.#initCacheState();
+        this.legendState = this.#initLegendState();
+        this.layerState = this.#initLayerState();
+        this.hoverState = this.#initHoverState();
+        this.viewState = this.#initViewState();
 
-        this.tooltip = document.getElementById('tooltip');
-        this._tooltipContentKey = '';
-        this._tooltipSize = { w: 0, h: 0 };
-        this._tooltipRaf = 0;
-        this._tooltipNextPos = null;
-        this._tooltipShowDelay = 80;
-        this._tooltipShowTimer = 0;
-        this._tooltipPending = null;
-        this._tooltipVisible = false;
-        this._tooltipChangeDelay = 60;
-        this._tooltipChangeTimer = 0;
-        this._tooltipPendingChange = null;
-        this._tooltipPendingKey = '';
-        if (this.tooltip) {
-            this.tooltip.style.left = '0px';
-            this.tooltip.style.top = '0px';
-            this.tooltip.style.transform = 'translate3d(0, 0, 0)';
-        }
-        this.filterRange = null;
-        this.categoricalFilter = new Set();
-        this.bivarFilters = { x: null, y: null };
-        this._intlCache = new Map();
-        this._legendCleanup = null;
-        this._legendChromeCleanup = null;
-        this._legendCollapsedManual = null;
-        this._legendCollapsed = false;
-        this._mainLayers = [];
-        this._baseLayers = null;
-        this._borderLayers = null;
-        this._hoveredFeature = null;
-        this._hoveredFeatureId = null;
-        this._legendCache = null;
-        this.currentZoom = null;
-        this._borderWidthCache = null;
+        this.#setupTooltipElement();
+    }
+
+    #initDataState() {
+        return {
+            currentData: null,
+            currentMetric: null,
+            currentMetricId: null,
+            currentMetricLabel: null,
+            currentMetricDescription: null,
+            currentMetricSettings: null
+        };
+    }
+
+    #initBivarState() {
+        return {
+            bivar: null,
+            valuesX: null,
+            valuesY: null,
+            data: null,
+            cfg: null
+        };
+    }
+
+    #initTooltipState() {
+        return {
+            el: document.getElementById('tooltip'),
+            contentKey: '',
+            size: { w: 0, h: 0 },
+            raf: 0,
+            nextPos: null,
+            showDelay: 80,
+            showTimer: 0,
+            pending: null,
+            visible: false,
+            changeDelay: 60,
+            changeTimer: 0,
+            pendingChange: null,
+            pendingKey: ''
+        };
+    }
+
+    #initFilterState() {
+        return {
+            range: null,
+            categorical: new Set(),
+            bivar: { x: null, y: null }
+        };
+    }
+
+    #initCacheState() {
+        return {
+            intl: new Map()
+        };
+    }
+
+    #initLegendState() {
+        return {
+            cleanup: null,
+            chromeCleanup: null,
+            collapsedManual: null,
+            collapsed: false,
+            cache: null
+        };
+    }
+
+    #initLayerState() {
+        return {
+            main: [],
+            base: null,
+            border: null
+        };
+    }
+
+    #initHoverState() {
+        return {
+            feature: null,
+            featureId: null
+        };
+    }
+
+    #initViewState() {
+        return {
+            currentZoom: null,
+            borderWidthCache: null
+        };
+    }
+
+    #setupTooltipElement() {
+        const tooltip = this.tooltipState.el;
+        if (!tooltip) return;
+        tooltip.style.left = '0px';
+        tooltip.style.top = '0px';
+        tooltip.style.transform = 'translate3d(0, 0, 0)';
     }
 
     getDpr() {
@@ -561,7 +631,7 @@ class MapRenderer {
         const baseZoom = Number.isFinite(this.baseZoom) ? this.baseZoom : 0;
         const z = Number.isFinite(zoom)
             ? zoom
-            : (Number.isFinite(this.currentZoom) ? this.currentZoom : baseZoom);
+            : (Number.isFinite(this.viewState.currentZoom) ? this.viewState.currentZoom : baseZoom);
         const span = 10;
         const tRaw = span > 0 ? (z - baseZoom) / span : 0;
         const t = Math.max(0, Math.min(1, tRaw));
@@ -579,20 +649,20 @@ class MapRenderer {
     updateBorderWidths(zoom) {
         const z = Number.isFinite(zoom)
             ? zoom
-            : (Number.isFinite(this.currentZoom) ? this.currentZoom : this.baseZoom);
+            : (Number.isFinite(this.viewState.currentZoom) ? this.viewState.currentZoom : this.baseZoom);
         const widths = this.getBorderWidths(z);
         const rounded = {
             county: Math.round(widths.county * 100) / 100,
             province: Math.round(widths.province * 100) / 100
         };
-        const prev = this._borderWidthCache;
+        const prev = this.viewState.borderWidthCache;
         if (prev && prev.county === rounded.county && prev.province === rounded.province) {
-            this.currentZoom = z;
+            this.viewState.currentZoom = z;
             return;
         }
-        this.currentZoom = z;
-        this._borderWidthCache = rounded;
-        this._borderLayers = null;
+        this.viewState.currentZoom = z;
+        this.viewState.borderWidthCache = rounded;
+        this.layerState.border = null;
         if (this.deckgl) this.refreshLayers();
     }
 
@@ -634,9 +704,9 @@ class MapRenderer {
         const legend = document.getElementById('legend');
         const btn = document.getElementById('legendToggle');
         if (!legend || !btn) return;
-        this._legendCollapsed = !!collapsed;
-        legend.classList.toggle('is-collapsed', this._legendCollapsed);
-        btn.setAttribute('aria-expanded', String(!this._legendCollapsed));
+        this.legendState.collapsed = !!collapsed;
+        legend.classList.toggle('is-collapsed', this.legendState.collapsed);
+        btn.setAttribute('aria-expanded', String(!this.legendState.collapsed));
     }
 
     syncLegendToggle() {
@@ -648,14 +718,14 @@ class MapRenderer {
         btn.style.display = show ? 'inline-flex' : 'none';
         if (!show) {
             legend.classList.remove('is-collapsed');
-            this._legendCollapsed = false;
-            this._legendCollapsedManual = null;
+            this.legendState.collapsed = false;
+            this.legendState.collapsedManual = null;
             btn.setAttribute('aria-expanded', 'true');
             return;
         }
 
-        if (this._legendCollapsedManual == null) this.setLegendCollapsed(this.isMobileLegend());
-        else this.setLegendCollapsed(this._legendCollapsedManual);
+        if (this.legendState.collapsedManual == null) this.setLegendCollapsed(this.isMobileLegend());
+        else this.setLegendCollapsed(this.legendState.collapsedManual);
     }
 
     initLegendChrome() {
@@ -664,18 +734,18 @@ class MapRenderer {
         if (!legend || !btn) return;
 
         const applyAuto = () => {
-            if (this._legendCollapsedManual != null) return;
+            if (this.legendState.collapsedManual != null) return;
             this.setLegendCollapsed(this.isMobileLegend());
         };
 
         btn.onclick = () => {
-            this._legendCollapsedManual = !this._legendCollapsed;
-            this.setLegendCollapsed(this._legendCollapsedManual);
+            this.legendState.collapsedManual = !this.legendState.collapsed;
+            this.setLegendCollapsed(this.legendState.collapsedManual);
         };
 
         const onResize = this.debounce(applyAuto, 180);
         window.addEventListener('resize', onResize, { passive: true });
-        this._legendChromeCleanup = () => window.removeEventListener('resize', onResize);
+        this.legendState.chromeCleanup = () => window.removeEventListener('resize', onResize);
 
         this.setLegendCollapsed(false);
         applyAuto();
@@ -714,7 +784,7 @@ class MapRenderer {
     }
 
     ensureGradientLegendCache() {
-        if (this._legendCache?.type === 'gradient') return this._legendCache;
+        if (this.legendState.cache?.type === 'gradient') return this.legendState.cache;
 
         const tpl = document.getElementById('legend-gradient-template');
         if (!tpl) return null;
@@ -761,7 +831,7 @@ class MapRenderer {
         midLabel.style.display = 'none';
         axisEl.appendChild(midLabel);
 
-        this._legendCache = {
+        this.legendState.cache = {
             type: 'gradient',
             shell,
             titleEl,
@@ -773,7 +843,7 @@ class MapRenderer {
             axisCanvas,
             axisLabels: { min: minLabel, max: maxLabel, mid: midLabel }
         };
-        return this._legendCache;
+        return this.legendState.cache;
     }
 
 
@@ -836,8 +906,8 @@ class MapRenderer {
             ? this.computeViewFromBounds(options.bounds, container)
             : { target: [0, 0, 0], zoom: 0, pitch: 0, bearing: 0 };
         this.baseZoom = initialViewState.zoom ?? 0;
-        this.currentZoom = initialViewState.zoom ?? 0;
-        this.updateBorderWidths(this.currentZoom);
+        this.viewState.currentZoom = initialViewState.zoom ?? 0;
+        this.updateBorderWidths(this.viewState.currentZoom);
         console.log('Base zoom: ' + this.baseZoom);
 
         this.deckgl = new Deck({
@@ -1216,25 +1286,25 @@ class MapRenderer {
 
     updateBivariateLayers(features, dataByAxis, bivar, cfgByAxis, filters) {
 
-        this.bivar = bivar;
-        this.bivarData = dataByAxis || null;
-        this.bivarCfg = cfgByAxis || null;
-        if (!this.currentData) {
-            this.currentData = dataByAxis?.x || dataByAxis?.y || null;
+        this.bivarState.bivar = bivar;
+        this.bivarState.data = dataByAxis || null;
+        this.bivarState.cfg = cfgByAxis || null;
+        if (!this.dataState.currentData) {
+            this.dataState.currentData = dataByAxis?.x || dataByAxis?.y || null;
         }
-        this.currentMetricId = null;
-        this.currentMetricLabel = bivar?.label || null;
-        this.currentMetricDescription = bivar?.description || null;
-        this.currentMetricSettings = null;
-        this.bivarFilters = filters || { x: null, y: null };
-        this.currentMetric = null; // clear
+        this.dataState.currentMetricId = null;
+        this.dataState.currentMetricLabel = bivar?.label || null;
+        this.dataState.currentMetricDescription = bivar?.description || null;
+        this.dataState.currentMetricSettings = null;
+        this.filterState.bivar = filters || { x: null, y: null };
+        this.dataState.currentMetric = null; // clear
 
-        const xData = dataByAxis?.x || this.currentData;
-        const yData = dataByAxis?.y || this.currentData;
+        const xData = dataByAxis?.x || this.dataState.currentData;
+        const yData = dataByAxis?.y || this.dataState.currentData;
         const key = `${bivar.key}::${bivar?.x?.category || ''}::${bivar?.y?.category || ''}`;
-        if (!this.bivarValuesX || !this.bivarValuesY || this.bivarKey !== key) {
-            this.bivarValuesX = features.map(f => app.dataManager.getFeatureValueByFeature(xData, f, bivar.x.unit));
-            this.bivarValuesY = features.map(f => app.dataManager.getFeatureValueByFeature(yData, f, bivar.y.unit));
+        if (!this.bivarState.valuesX || !this.bivarState.valuesY || this.bivarKey !== key) {
+            this.bivarState.valuesX = features.map(f => app.dataManager.getFeatureValueByFeature(xData, f, bivar.x.unit));
+            this.bivarState.valuesY = features.map(f => app.dataManager.getFeatureValueByFeature(yData, f, bivar.y.unit));
             this.bivarKey = key;
         }
 
@@ -1255,8 +1325,8 @@ class MapRenderer {
         const interpY = paletteInfo ? null : this.buildInterpolator(ySet, yStats);
         const defaultXBins = Math.max(2, Number(xSet?.paletteSteps || xSet?.legendSteps || 4));
         const defaultYBins = Math.max(2, Number(ySet?.paletteSteps || ySet?.legendSteps || 4));
-        const xBinner = this.buildBinner(this.bivarValuesX, xStats, xSet, defaultXBins);
-        const yBinner = this.buildBinner(this.bivarValuesY, yStats, ySet, defaultYBins);
+        const xBinner = this.buildBinner(this.bivarState.valuesX, xStats, xSet, defaultXBins);
+        const yBinner = this.buildBinner(this.bivarState.valuesY, yStats, ySet, defaultYBins);
 
         if (paletteInfo) {
             if (xBinner && xBinner.bins !== paletteInfo.binsX) {
@@ -1321,13 +1391,13 @@ class MapRenderer {
             stroked: false,
             pickable: true,
             getFillColor: (f, {index}) => {
-                const vx = this.bivarValuesX[index];
-                const vy = this.bivarValuesY[index];
+                const vx = this.bivarState.valuesX[index];
+                const vy = this.bivarState.valuesY[index];
 
                 if (!Number.isFinite(vx) || !Number.isFinite(vy)) return [200,200,200,255];
 
-                if (this.bivarFilters.x && (vx < this.bivarFilters.x.min || vx > this.bivarFilters.x.max)) return [0,0,0,0];
-                if (this.bivarFilters.y && (vy < this.bivarFilters.y.min || vy > this.bivarFilters.y.max)) return [0,0,0,0];
+                if (this.filterState.bivar.x && (vx < this.filterState.bivar.x.min || vx > this.filterState.bivar.x.max)) return [0,0,0,0];
+                if (this.filterState.bivar.y && (vy < this.filterState.bivar.y.min || vy > this.filterState.bivar.y.max)) return [0,0,0,0];
 
                 const tx = xBinner ? xBinner.t(vx) : xNorm(vx);
                 const ty = yBinner ? yBinner.t(vy) : yNorm(vy);
@@ -1343,8 +1413,8 @@ class MapRenderer {
             updateTriggers: {
                 getFillColor: [
                     this.bivarKey,
-                    this.bivarFilters?.x?.min, this.bivarFilters?.x?.max,
-                    this.bivarFilters?.y?.min, this.bivarFilters?.y?.max,
+                    this.filterState.bivar?.x?.min, this.filterState.bivar?.x?.max,
+                    this.filterState.bivar?.y?.min, this.filterState.bivar?.y?.max,
                     xSet?.scale, xSet?.domain, ySet?.scale, ySet?.domain,
                     xSet?.binning?.method, xSet?.binning?.bins,
                     ySet?.binning?.method, ySet?.binning?.bins,
@@ -1362,15 +1432,15 @@ class MapRenderer {
 
     updateLayers(features, data, metric, metricKey, cfg, filterRange, catFilter) {
 
-        this.currentData = data;
-        this.currentMetric = metric;
-        this.currentMetricId = metricKey;
-        this.currentMetricLabel = cfg?.metrics?.[metricKey]?.label || metricKey;
-        this.currentMetricDescription = cfg?.metrics?.[metricKey]?.description || null;
-        this.currentMetricSettings = (cfg?.metrics?.[metricKey]?.settings) || null;
-        this.bivar = null; // clear bivariate
-        this.filterRange = filterRange;
-        this.categoricalFilter = catFilter;
+        this.dataState.currentData = data;
+        this.dataState.currentMetric = metric;
+        this.dataState.currentMetricId = metricKey;
+        this.dataState.currentMetricLabel = cfg?.metrics?.[metricKey]?.label || metricKey;
+        this.dataState.currentMetricDescription = cfg?.metrics?.[metricKey]?.description || null;
+        this.dataState.currentMetricSettings = (cfg?.metrics?.[metricKey]?.settings) || null;
+        this.bivarState.bivar = null; // clear bivariate
+        this.filterState.range = filterRange;
+        this.filterState.categorical = catFilter;
 
         const stats = app.dataManager.getPropertyStats(data, metric);
         if (!stats) {
@@ -1399,13 +1469,13 @@ class MapRenderer {
                 if (v == null) return [200,200,200,255];
 
                 if (stats.type === 'categorical') {
-                    if (this.categoricalFilter && this.categoricalFilter.size > 0 && !this.categoricalFilter.has(v)) return [0,0,0,0];
+                    if (this.filterState.categorical && this.filterState.categorical.size > 0 && !this.filterState.categorical.has(v)) return [0,0,0,0];
                     const c = d3.rgb(interpolator(v));
                     return [c.r, c.g, c.b, 255];
                 }
 
                 if (!Number.isFinite(v)) return [200,200,200,255];
-                if (this.filterRange && (v < this.filterRange.min || v > this.filterRange.max)) return [0,0,0,0];
+                if (this.filterState.range && (v < this.filterState.range.min || v > this.filterState.range.max)) return [0,0,0,0];
 
                 if (binner && palette) {
                     const idx = binner.index(v);
@@ -1440,8 +1510,8 @@ class MapRenderer {
     }
 
     ensureStaticLayers() {
-        if (!this._baseLayers) {
-            this._baseLayers = [
+        if (!this.layerState.base) {
+            this.layerState.base = [
                 new GeoJsonLayer({
                     id: 'country-fill',
                     data: app.boundaryManager.countryFeatures || [],
@@ -1452,11 +1522,11 @@ class MapRenderer {
             ];
         }
 
-        if (!this._borderLayers) {
-            const borderWidths = this._borderWidthCache || this.getBorderWidths();
+        if (!this.layerState.border) {
+            const borderWidths = this.viewState.borderWidthCache || this.getBorderWidths();
             const countyWidth = borderWidths.county;
             const provinceWidth = borderWidths.province;
-            this._borderLayers = [
+            this.layerState.border = [
                 new PathLayer({
                     id: 'borders-county',
                     data: app.boundaryManager.countyPaths || [],
@@ -1508,8 +1578,8 @@ class MapRenderer {
     }
 
     buildHighlightLayers() {
-        if (!this._hoveredFeature) return null;
-        const data = [this._hoveredFeature];
+        if (!this.hoverState.feature) return null;
+        const data = [this.hoverState.feature];
 
         const shared = {
             data,
@@ -1547,24 +1617,24 @@ class MapRenderer {
         this.ensureStaticLayers();
         const highlightLayers = this.buildHighlightLayers();
         const layers = [
-            ...this._baseLayers,
-            ...(this._mainLayers || []),
-            ...this._borderLayers,
+            ...this.layerState.base,
+            ...(this.layerState.main || []),
+            ...this.layerState.border,
             ...(highlightLayers ? [highlightLayers] : [])
         ];
         this.deckgl.setProps({ layers });
     }
 
     renderDeck(mainLayers) {
-        this._mainLayers = mainLayers || [];
+        this.layerState.main = mainLayers || [];
         this.refreshLayers();
     }
 
     setHoveredFeature(feature) {
         const nextId = feature ? this.getFeatureIdFromFeature(feature) : null;
-        if (nextId === this._hoveredFeatureId) return;
-        this._hoveredFeatureId = nextId;
-        this._hoveredFeature = feature || null;
+        if (nextId === this.hoverState.featureId) return;
+        this.hoverState.featureId = nextId;
+        this.hoverState.feature = feature || null;
         if (this.deckgl) this.refreshLayers();
     }
     updateLegend(stats, interpolator, normalizeValue, settings, binner, palette) {
@@ -1593,8 +1663,8 @@ class MapRenderer {
 
         legend.replaceChildren(cache.shell);
 
-        if (cache.titleEl) cache.titleEl.textContent = this.currentMetricLabel || this.currentMetricId || 'Metric';
-        const desc = this.currentMetricDescription || '';
+        if (cache.titleEl) cache.titleEl.textContent = this.dataState.currentMetricLabel || this.dataState.currentMetricId || 'Metric';
+        const desc = this.dataState.currentMetricDescription || '';
         if (cache.descEl) {
             cache.descEl.textContent = desc;
             cache.descEl.style.display = desc ? '' : 'none';
@@ -1690,10 +1760,10 @@ class MapRenderer {
         const head = document.createElement('div');
         const title = document.createElement('div');
         title.className = 'legend-title';
-        title.textContent = this.currentMetricLabel || this.currentMetricId || 'Metric';
+        title.textContent = this.dataState.currentMetricLabel || this.dataState.currentMetricId || 'Metric';
         head.appendChild(title);
 
-        const desc = this.currentMetricDescription || '';
+        const desc = this.dataState.currentMetricDescription || '';
         if (desc) {
             const description = document.createElement('div');
             description.className = 'legend-description';
@@ -1749,10 +1819,10 @@ class MapRenderer {
         const head = document.createElement('div');
         const title = document.createElement('div');
         title.className = 'legend-title';
-        title.textContent = this.currentMetricLabel || this.currentMetricId || 'Categories';
+        title.textContent = this.dataState.currentMetricLabel || this.dataState.currentMetricId || 'Categories';
         head.appendChild(title);
 
-        const desc = this.currentMetricDescription || '';
+        const desc = this.dataState.currentMetricDescription || '';
         if (desc) {
             const description = document.createElement('div');
             description.className = 'legend-description';
@@ -1803,8 +1873,8 @@ class MapRenderer {
 
     updateBivariateLegend(bivar, xStats, yStats, xScale, yScale, interpX, interpY, xSet, ySet, blendMode = 'additive', xBinner = null, yBinner = null, paletteInfo = null) {
 
-        this._legendCleanup?.();
-        this._legendCleanup = null;
+        this.legendState.cleanup?.();
+        this.legendState.cleanup = null;
 
         const legend = document.getElementById('legendContent');
         legend.replaceChildren();
@@ -2121,7 +2191,7 @@ class MapRenderer {
         ro.observe(yAxisEl);
         window.addEventListener('resize', render, { passive: true });
 
-        this._legendCleanup = () => {
+        this.legendState.cleanup = () => {
             ro.disconnect();
             window.removeEventListener('resize', render);
         };
@@ -2131,28 +2201,28 @@ class MapRenderer {
     }
 
     onHover(info) {
-        if (!info.object || !this.currentData) {
-            this.tooltip.style.display = 'none';
-            this.tooltip.style.visibility = 'hidden';
-            if (this._tooltipRaf) {
-                cancelAnimationFrame(this._tooltipRaf);
-                this._tooltipRaf = 0;
+        if (!info.object || !this.dataState.currentData) {
+            this.tooltipState.el.style.display = 'none';
+            this.tooltipState.el.style.visibility = 'hidden';
+            if (this.tooltipState.raf) {
+                cancelAnimationFrame(this.tooltipState.raf);
+                this.tooltipState.raf = 0;
             }
-            this._tooltipNextPos = null;
-            if (this._tooltipShowTimer) {
-                clearTimeout(this._tooltipShowTimer);
-                this._tooltipShowTimer = 0;
+            this.tooltipState.nextPos = null;
+            if (this.tooltipState.showTimer) {
+                clearTimeout(this.tooltipState.showTimer);
+                this.tooltipState.showTimer = 0;
             }
-            this._tooltipPending = null;
-            if (this._tooltipChangeTimer) {
-                clearTimeout(this._tooltipChangeTimer);
-                this._tooltipChangeTimer = 0;
+            this.tooltipState.pending = null;
+            if (this.tooltipState.changeTimer) {
+                clearTimeout(this.tooltipState.changeTimer);
+                this.tooltipState.changeTimer = 0;
             }
-            this._tooltipPendingChange = null;
-            this._tooltipPendingKey = '';
-            this._tooltipVisible = false;
-            this._tooltipContentKey = '';
-            this.tooltip.style.opacity = '';
+            this.tooltipState.pendingChange = null;
+            this.tooltipState.pendingKey = '';
+            this.tooltipState.visible = false;
+            this.tooltipState.contentKey = '';
+            this.tooltipState.el.style.opacity = '';
             this.setHoveredFeature(null);
             return;
         }
@@ -2164,7 +2234,7 @@ class MapRenderer {
         const clone = tpl.content.cloneNode(true);
         const props = feature.properties || {};
         const featureId = app.dataManager.normalizeId(props.CODE ?? props.code ?? feature.id);
-        const nameFromFile = app.dataManager.getFeatureNameByFeature(this.currentData, feature);
+        const nameFromFile = app.dataManager.getFeatureNameByFeature(this.dataState.currentData, feature);
         const nameFromProps = props.NAME || props.name || '';
         const fallbackTitle = nameFromProps || featureId || feature.id;
         const title = nameFromFile || fallbackTitle || '';
@@ -2176,97 +2246,99 @@ class MapRenderer {
             subtitleEl.style.display = subtitle ? '' : 'none';
         }
 
-        if (this.bivar) {
-            clone.querySelector('.tooltip-metric').textContent = this.bivar.label || 'Bivariate';
-            const xData = this.bivarData?.x || this.currentData;
-            const yData = this.bivarData?.y || this.currentData;
-            const vx = app.dataManager.getFeatureValueByFeature(xData, feature, this.bivar.x.unit);
-            const vy = app.dataManager.getFeatureValueByFeature(yData, feature, this.bivar.y.unit);
-            clone.querySelector('.tooltip-value').textContent = `${this.formatValue(vx, this.bivar.x.settings)} | ${this.formatValue(vy, this.bivar.y.settings)}`;
+        if (this.bivarState.bivar) {
+            clone.querySelector('.tooltip-metric').textContent = this.bivarState.bivar.label || 'Bivariate';
+            const xData = this.bivarState.data?.x || this.dataState.currentData;
+            const yData = this.bivarState.data?.y || this.dataState.currentData;
+            const vx = app.dataManager.getFeatureValueByFeature(xData, feature, this.bivarState.bivar.x.unit);
+            const vy = app.dataManager.getFeatureValueByFeature(yData, feature, this.bivarState.bivar.y.unit);
+            clone.querySelector('.tooltip-value').textContent = `${this.formatValue(vx, this.bivarState.bivar.x.settings)} | ${this.formatValue(vy, this.bivarState.bivar.y.settings)}`;
         }
-        else if (this.currentMetric) {
-            const v = app.dataManager.getFeatureValueByFeature(this.currentData, feature, this.currentMetric);
-            clone.querySelector('.tooltip-metric').textContent = this.currentMetricLabel || this.currentMetricId || 'Metric';
-            clone.querySelector('.tooltip-value').textContent = this.formatValue(v, this.currentMetricSettings);
+        else if (this.dataState.currentMetric) {
+            const v = app.dataManager.getFeatureValueByFeature(this.dataState.currentData, feature, this.dataState.currentMetric);
+            clone.querySelector('.tooltip-metric').textContent = this.dataState.currentMetricLabel || this.dataState.currentMetricId || 'Metric';
+            clone.querySelector('.tooltip-value').textContent = this.formatValue(v, this.dataState.currentMetricSettings);
         }
 
         const contentKey = this.getTooltipContentKey(featureId);
-        if (this._tooltipVisible || this._tooltipShowDelay <= 0) {
+        if (this.tooltipState.visible || this.tooltipState.showDelay <= 0) {
             this.showTooltipNow(info, clone, contentKey);
             return;
         }
 
-        if (this._tooltipChangeTimer) {
-            clearTimeout(this._tooltipChangeTimer);
-            this._tooltipChangeTimer = 0;
+        if (this.tooltipState.changeTimer) {
+            clearTimeout(this.tooltipState.changeTimer);
+            this.tooltipState.changeTimer = 0;
         }
-        this._tooltipPendingChange = null;
-        this._tooltipPending = { info, clone, contentKey };
-        if (!this._tooltipShowTimer) {
-            this._tooltipShowTimer = setTimeout(() => {
-                this._tooltipShowTimer = 0;
-                const pending = this._tooltipPending;
-                this._tooltipPending = null;
+        this.tooltipState.pendingChange = null;
+        this.tooltipState.pending = { info, clone, contentKey };
+        if (!this.tooltipState.showTimer) {
+            this.tooltipState.showTimer = setTimeout(() => {
+                this.tooltipState.showTimer = 0;
+                const pending = this.tooltipState.pending;
+                this.tooltipState.pending = null;
                 if (!pending) return;
                 this.showTooltipNow(pending.info, pending.clone, pending.contentKey);
-            }, this._tooltipShowDelay);
+            }, this.tooltipState.showDelay);
         }
 
     }
 
     showTooltipNow(info, clone, contentKey) {
-        this.tooltip.style.display = 'block';
-        this.tooltip.style.visibility = 'visible';
-        this._tooltipVisible = true;
+        this.tooltipState.el.style.display = 'block';
+        this.tooltipState.el.style.visibility = 'visible';
+        this.tooltipState.visible = true;
 
-        if (this._tooltipChangeDelay > 0 && this._tooltipContentKey && contentKey !== this._tooltipContentKey) {
-            if (this._tooltipPendingKey !== contentKey) {
-                if (this._tooltipChangeTimer) {
-                    clearTimeout(this._tooltipChangeTimer);
-                    this._tooltipChangeTimer = 0;
+        if (this.tooltipState.changeDelay > 0 && this.tooltipState.contentKey && contentKey !== this.tooltipState.contentKey) {
+            if (this.tooltipState.pendingKey !== contentKey) {
+                if (this.tooltipState.changeTimer) {
+                    clearTimeout(this.tooltipState.changeTimer);
+                    this.tooltipState.changeTimer = 0;
                 }
-                this._tooltipPendingKey = contentKey;
+                this.tooltipState.pendingKey = contentKey;
             }
-            this.tooltip.style.opacity = '0.15';
-            this._tooltipPendingChange = { info, clone, contentKey };
-            if (!this._tooltipChangeTimer) {
-                this._tooltipChangeTimer = setTimeout(() => {
-                    this._tooltipChangeTimer = 0;
-                    const pending = this._tooltipPendingChange;
-                    this._tooltipPendingChange = null;
+            this.tooltipState.el.style.opacity = '0.15';
+            this.tooltipState.pendingChange = { info, clone, contentKey };
+            if (!this.tooltipState.changeTimer) {
+                this.tooltipState.changeTimer = setTimeout(() => {
+                    this.tooltipState.changeTimer = 0;
+                    const pending = this.tooltipState.pendingChange;
+                    this.tooltipState.pendingChange = null;
                     if (!pending) return;
-                    this._tooltipPendingKey = '';
+                    this.tooltipState.pendingKey = '';
                     this.applyTooltipContent(pending.clone, pending.contentKey);
                     this.updateTooltipPosition(pending.info);
-                }, this._tooltipChangeDelay);
+                }, this.tooltipState.changeDelay);
             }
         } else {
-            if (this._tooltipChangeTimer) {
-                clearTimeout(this._tooltipChangeTimer);
-                this._tooltipChangeTimer = 0;
+            if (this.tooltipState.changeTimer) {
+                clearTimeout(this.tooltipState.changeTimer);
+                this.tooltipState.changeTimer = 0;
             }
-            this._tooltipPendingChange = null;
-            this._tooltipPendingKey = '';
+            this.tooltipState.pendingChange = null;
+            this.tooltipState.pendingKey = '';
             this.applyTooltipContent(clone, contentKey);
         }
         this.updateTooltipPosition(info);
     }
 
     applyTooltipContent(clone, contentKey) {
-        if (contentKey !== this._tooltipContentKey) {
-            this._tooltipContentKey = contentKey;
-            this.tooltip.replaceChildren(clone);
-            this._tooltipSize = {
-                w: this.tooltip.offsetWidth,
-                h: this.tooltip.offsetHeight
+        if (contentKey !== this.tooltipState.contentKey) {
+            this.tooltipState.contentKey = contentKey;
+            this.tooltipState.el.replaceChildren(clone);
+            this.tooltipState.size = {
+                w: this.tooltipState.el.offsetWidth,
+                h: this.tooltipState.el.offsetHeight
             };
         }
-        this.tooltip.style.opacity = '1';
-        this.tooltip.style.visibility = 'visible';
+        this.tooltipState.el.style.opacity = '1';
+        this.tooltipState.el.style.visibility = 'visible';
     }
 
     getTooltipContentKey(featureId) {
-        const metricKey = this.bivar ? (this.bivar.key || 'bivar') : (this.currentMetricId || this.currentMetric || '');
+        const metricKey = this.bivarState.bivar
+            ? (this.bivarState.bivar.key || 'bivar')
+            : (this.dataState.currentMetricId || this.dataState.currentMetric || '');
         return `${featureId}::${metricKey}`;
     }
 
@@ -2278,12 +2350,12 @@ class MapRenderer {
     }
 
     scheduleTooltipPosition(x0, y0) {
-        this._tooltipNextPos = { x: x0, y: y0 };
-        if (this._tooltipRaf) return;
-        this._tooltipRaf = requestAnimationFrame(() => {
-            this._tooltipRaf = 0;
-            const next = this._tooltipNextPos;
-            this._tooltipNextPos = null;
+        this.tooltipState.nextPos = { x: x0, y: y0 };
+        if (this.tooltipState.raf) return;
+        this.tooltipState.raf = requestAnimationFrame(() => {
+            this.tooltipState.raf = 0;
+            const next = this.tooltipState.nextPos;
+            this.tooltipState.nextPos = null;
             if (!next) return;
             this.applyTooltipPosition(next.x, next.y);
         });
@@ -2292,14 +2364,14 @@ class MapRenderer {
     applyTooltipPosition(x0, y0) {
         const offset = 12;
         const padding = 8;
-        const container = this.tooltip.offsetParent || this.tooltip.parentElement || document.body;
+        const container = this.tooltipState.el.offsetParent || this.tooltipState.el.parentElement || document.body;
         const rect = container.getBoundingClientRect();
-        let tooltipW = this._tooltipSize.w;
-        let tooltipH = this._tooltipSize.h;
+        let tooltipW = this.tooltipState.size.w;
+        let tooltipH = this.tooltipState.size.h;
         if (!(tooltipW > 0 && tooltipH > 0)) {
-            tooltipW = this.tooltip.offsetWidth;
-            tooltipH = this.tooltip.offsetHeight;
-            this._tooltipSize = { w: tooltipW, h: tooltipH };
+            tooltipW = this.tooltipState.el.offsetWidth;
+            tooltipH = this.tooltipState.el.offsetHeight;
+            this.tooltipState.size = { w: tooltipW, h: tooltipH };
         }
         let x = x0 + offset;
         let y = y0 + offset;
@@ -2313,7 +2385,7 @@ class MapRenderer {
         const maxY = Math.max(padding, rect.height - tooltipH - padding);
         x = Math.min(Math.max(padding, x), maxX);
         y = Math.min(Math.max(padding, y), maxY);
-        this.tooltip.style.transform = `translate3d(${Math.round(x)}px, ${Math.round(y)}px, 0)`;
+        this.tooltipState.el.style.transform = `translate3d(${Math.round(x)}px, ${Math.round(y)}px, 0)`;
     }
 
     computeViewFromBounds(bounds, container) {
@@ -2343,10 +2415,10 @@ class MapRenderer {
 
         const cacheIntl = (options) => {
             const key = JSON.stringify(options);
-            const hit = this._intlCache.get(key);
+            const hit = this.cacheState.intl.get(key);
             if (hit) return hit;
             const nf = new Intl.NumberFormat(undefined, options);
-            this._intlCache.set(key, nf);
+            this.cacheState.intl.set(key, nf);
             return nf;
         };
 
@@ -2422,13 +2494,32 @@ class ChoroplethApp {
         this.dataManager = new DataManager();
         this.boundaryManager = new BoundaryManager();
         this.mapRenderer = new MapRenderer('map');
-        this.currentCategory = null;
-        this.currentMetric = null;
-        this.currentUnitId = null;
-        this.activeComposite = null;
-        this.categoricalSelections = new Map();
-        this.compositeSelections = new Map();
-        this.filterControls = [];
+        this.state = this.#initState();
+        this.selections = this.#initSelections();
+        this.controls = this.#initControls();
+    }
+
+    #initState() {
+        return {
+            currentCategory: null,
+            currentMetric: null,
+            currentUnitId: null,
+            currentData: null,
+            activeComposite: null
+        };
+    }
+
+    #initSelections() {
+        return {
+            categorical: new Map(),
+            composite: new Map()
+        };
+    }
+
+    #initControls() {
+        return {
+            filter: []
+        };
     }
 
     async initialize() {
@@ -2467,8 +2558,8 @@ class ChoroplethApp {
     }
 
     async loadCategory(category) {
-        this.currentCategory = category;
-        this.currentData = await this.dataManager.loadCategoryData(category);
+        this.state.currentCategory = category;
+        this.state.currentData = await this.dataManager.loadCategoryData(category);
         this.updateMetricSelector();
         const cfg = this.dataManager.indexes.get('category')[category];
         const firstMetric = (cfg.metricsOrder && cfg.metricsOrder[0]) || Object.keys(cfg.metrics || {})[0];
@@ -2478,7 +2569,7 @@ class ChoroplethApp {
     updateMetricSelector() {
         const container = document.getElementById('metricSelector');
         container.innerHTML = '';
-        const cfg = this.dataManager.indexes.get('category')[this.currentCategory];
+        const cfg = this.dataManager.indexes.get('category')[this.state.currentCategory];
 
         const metricIds = (Array.isArray(cfg.metricsOrder) && cfg.metricsOrder.length)
             ? cfg.metricsOrder
@@ -2510,15 +2601,15 @@ class ChoroplethApp {
             return;
         }
 
-        this.currentMetric = metric;
+        this.state.currentMetric = metric;
         this.setActiveButton(`metric:${metric}`);
 
         const { unit, composite } = await this.resolveMetricSource(cfg, metric);
         if (!unit) return;
-        this.currentUnitId = unit;
-        this.activeComposite = composite;
+        this.state.currentUnitId = unit;
+        this.state.activeComposite = composite;
 
-        const stats = this.currentData ? this.dataManager.getPropertyStats(this.currentData, unit) : null;
+        const stats = this.state.currentData ? this.dataManager.getPropertyStats(this.state.currentData, unit) : null;
         let catFilter = null;
         if (stats?.type === 'categorical') {
             const selection = this.ensureCategoricalSelection(unit, stats.categories);
@@ -2527,7 +2618,7 @@ class ChoroplethApp {
 
         this.mapRenderer.updateLayers(
             this.boundaryManager.features,
-            this.currentData,
+            this.state.currentData,
             unit,
             metric,
             cfg,
@@ -2541,9 +2632,9 @@ class ChoroplethApp {
     async selectBivariateMetric(metricId, def, cfg) {
 
         this.setActiveButton(`metric:${metricId}`);
-        this.currentMetric = null;
-        this.currentUnitId = null;
-        this.activeComposite = null;
+        this.state.currentMetric = null;
+        this.state.currentUnitId = null;
+        this.state.activeComposite = null;
 
         const normalizeAxis = (axis, fallbackLabel) => {
             if (typeof axis === 'string') return { metricId: axis, label: fallbackLabel || null };
@@ -2580,8 +2671,8 @@ class ChoroplethApp {
         const xAxis = normalizeAxis(def.x, def.xLabel);
         const yAxis = normalizeAxis(def.y, def.yLabel);
 
-        const xCategory = xAxis.category || this.currentCategory;
-        const yCategory = yAxis.category || this.currentCategory;
+        const xCategory = xAxis.category || this.state.currentCategory;
+        const yCategory = yAxis.category || this.state.currentCategory;
         const xCfg = this.dataManager.getCategoryConfig(xCategory) || {};
         const yCfg = this.dataManager.getCategoryConfig(yCategory) || {};
 
@@ -2645,7 +2736,7 @@ class ChoroplethApp {
         const container = document.getElementById('filterControls');
         const compositeContainer = document.getElementById('compositeControls');
         container.replaceChildren();
-        this.filterControls = [];
+        this.controls.filter = [];
         if (compositeContainer) {
             compositeContainer.replaceChildren();
             compositeContainer.classList.add('is-hidden');
@@ -2655,27 +2746,27 @@ class ChoroplethApp {
             const el = document.createElement('range-filter-control');
             container.appendChild(el);
             el.setConfig({ label, description, onChange, formatValue });
-            this.filterControls.push(el);
+            this.controls.filter.push(el);
             return el;
         };
 
         if (isBivar) {
             const createHandler = (axis) => (min, max) => {
-                const current = this.mapRenderer.bivarFilters;
+                const current = this.mapRenderer.filterState.bivar;
                 current[axis] = { min, max };
                 this.mapRenderer.updateBivariateLayers(
                     this.boundaryManager.features,
-                    this.mapRenderer.bivarData,
-                    this.mapRenderer.bivar,
-                    this.mapRenderer.bivarCfg,
+                    this.mapRenderer.bivarState.data,
+                    this.mapRenderer.bivarState.bivar,
+                    this.mapRenderer.bivarState.cfg,
                     current
                 );
             };
 
-            const xData = this.mapRenderer.bivarData?.x || this.currentData;
-            const yData = this.mapRenderer.bivarData?.y || this.currentData;
-            const xCfg = this.mapRenderer.bivarCfg?.x || cfg;
-            const yCfg = this.mapRenderer.bivarCfg?.y || cfg;
+            const xData = this.mapRenderer.bivarState.data?.x || this.state.currentData;
+            const yData = this.mapRenderer.bivarState.data?.y || this.state.currentData;
+            const xCfg = this.mapRenderer.bivarState.cfg?.x || cfg;
+            const yCfg = this.mapRenderer.bivarState.cfg?.y || cfg;
 
             const statsX = this.dataManager.getPropertyStats(xData, bivarDef.x.unit);
             const setX = bivarDef.x.settings || (xCfg.metrics && xCfg.metrics[bivarDef.x.metricId]?.settings) || {};
@@ -2706,7 +2797,7 @@ class ChoroplethApp {
             }).update(statsY, setY, null, normY);
 
         } else {
-            const stats = options.stats || this.dataManager.getPropertyStats(this.currentData, unit);
+            const stats = options.stats || this.dataManager.getPropertyStats(this.state.currentData, unit);
             if (!stats) {
                 container.textContent = 'Metric statistics unavailable';
                 return;
@@ -2719,7 +2810,7 @@ class ChoroplethApp {
 
             if (stats.type === 'numeric') {
                 const norm = this.mapRenderer.buildScaler(stats, settings);
-                const currentRange = options.currentRange || this.clampFilterRange(stats, this.mapRenderer.filterRange);
+                const currentRange = options.currentRange || this.clampFilterRange(stats, this.mapRenderer.filterState.range);
                 const tx = this.mapRenderer.getDisplayTransform(settings, stats);
 
                 addRangeControl({
@@ -2733,7 +2824,7 @@ class ChoroplethApp {
                     fromDisplay: tx.fromDisplay
                 }).update(stats, settings, currentRange, norm);
 
-                if (this.activeComposite && this.activeComposite.metric === metricKey && compositeContainer) {
+                if (this.state.activeComposite && this.state.activeComposite.metric === metricKey && compositeContainer) {
                     this.renderCompositeControls(compositeContainer);
                     compositeContainer.classList.remove('is-hidden');
                 }
@@ -2747,7 +2838,7 @@ class ChoroplethApp {
 
     getCurrentCategoryConfig() {
         const index = this.dataManager.indexes.get('category') || {};
-        return index[this.currentCategory] || {};
+        return index[this.state.currentCategory] || {};
     }
 
     async resolveMetricSource(cfg, metric) {
@@ -2755,30 +2846,30 @@ class ChoroplethApp {
         if (!metricDef) return { unit: metric, composite: null };
 
         if (typeof metricDef.field === 'string') {
-            await this.dataManager.ensureMetricsLoaded(this.currentCategory, [metricDef.field], this.currentData);
+            await this.dataManager.ensureMetricsLoaded(this.state.currentCategory, [metricDef.field], this.state.currentData);
             return { unit: metricDef.field, composite: null };
         }
 
         const definition = metricDef.composite || null;
-        if (!definition || !this.currentData) return { unit: metric, composite: null };
+        if (!definition || !this.state.currentData) return { unit: metric, composite: null };
 
         const selection = this.getCompositeSelectionSet(metric, definition);
         const parts = (definition.parts || []).filter(part => selection.has(part));
-        await this.dataManager.ensureMetricsLoaded(this.currentCategory, parts, this.currentData);
-        const composite = this.dataManager.getCompositeBuffer(this.currentCategory, metric, definition, parts, this.currentData);
+        await this.dataManager.ensureMetricsLoaded(this.state.currentCategory, parts, this.state.currentData);
+        const composite = this.dataManager.getCompositeBuffer(this.state.currentCategory, metric, definition, parts, this.state.currentData);
         if (!composite) return { unit: metric, composite: null };
 
         return { unit: composite.key, composite: { metric, definition, selection } };
     }
 
     getCompositeSelectionSet(metric, definition, categoryOverride = null) {
-        const categoryKey = categoryOverride || this.currentCategory;
+        const categoryKey = categoryOverride || this.state.currentCategory;
         const key = `${categoryKey}::${metric}`;
-        let selection = this.compositeSelections.get(key);
+        let selection = this.selections.composite.get(key);
         if (!selection) {
             const defaults = (definition.default && definition.default.length) ? definition.default : definition.parts;
             selection = new Set(defaults || []);
-            this.compositeSelections.set(key, selection);
+            this.selections.composite.set(key, selection);
             return selection;
         }
         const allowed = new Set(definition.parts || []);
@@ -2792,14 +2883,14 @@ class ChoroplethApp {
         return selection;
     }
 
-    applyCurrentMetric({ filterRange = this.mapRenderer.filterRange, catFilter = this.mapRenderer.categoricalFilter } = {}) {
-        if (!this.currentMetric || !this.currentUnitId) return;
+    applyCurrentMetric({ filterRange = this.mapRenderer.filterState.range, catFilter = this.mapRenderer.filterState.categorical } = {}) {
+        if (!this.state.currentMetric || !this.state.currentUnitId) return;
         const cfg = this.getCurrentCategoryConfig();
         this.mapRenderer.updateLayers(
             this.boundaryManager.features,
-            this.currentData,
-            this.currentUnitId,
-            this.currentMetric,
+            this.state.currentData,
+            this.state.currentUnitId,
+            this.state.currentMetric,
             cfg,
             filterRange,
             catFilter
@@ -2814,12 +2905,12 @@ class ChoroplethApp {
     }
 
     ensureCategoricalSelection(unit, categories = []) {
-        const key = `${this.currentCategory}::${unit}`;
+        const key = `${this.state.currentCategory}::${unit}`;
         const values = categories.map(cat => cat.value);
-        let selection = this.categoricalSelections.get(key);
+        let selection = this.selections.categorical.get(key);
         if (!selection) {
             selection = new Set(values);
-            this.categoricalSelections.set(key, selection);
+            this.selections.categorical.set(key, selection);
             return selection;
         }
         const available = new Set(values);
@@ -2947,7 +3038,7 @@ class ChoroplethApp {
     }
 
     renderCompositeControls(container) {
-        const info = this.activeComposite;
+        const info = this.state.activeComposite;
         if (!info || !info.definition?.parts?.length || !container) return;
 
         const tpl = document.getElementById('composite-controls-template');
@@ -3004,8 +3095,8 @@ class ChoroplethApp {
     }
 
     async updateCompositeSelection(partsOverride) {
-        if (!this.activeComposite) return;
-        const { definition, selection, metric } = this.activeComposite;
+        if (!this.state.activeComposite) return;
+        const { definition, selection, metric } = this.state.activeComposite;
         if (Array.isArray(partsOverride)) {
             selection.clear();
             partsOverride.forEach(part => selection.add(part));
@@ -3013,17 +3104,17 @@ class ChoroplethApp {
 
         const cfg = this.getCurrentCategoryConfig();
         const parts = (definition.parts || []).filter(part => selection.has(part));
-        await this.dataManager.ensureMetricsLoaded(this.currentCategory, parts, this.currentData);
-        const composite = this.dataManager.getCompositeBuffer(this.currentCategory, metric, definition, parts, this.currentData);
+        await this.dataManager.ensureMetricsLoaded(this.state.currentCategory, parts, this.state.currentData);
+        const composite = this.dataManager.getCompositeBuffer(this.state.currentCategory, metric, definition, parts, this.state.currentData);
         if (!composite) return;
 
-        this.currentUnitId = composite.key;
-        const stats = this.dataManager.getPropertyStats(this.currentData, composite.key);
-        const range = this.clampFilterRange(stats, this.mapRenderer.filterRange);
+        this.state.currentUnitId = composite.key;
+        const stats = this.dataManager.getPropertyStats(this.state.currentData, composite.key);
+        const range = this.clampFilterRange(stats, this.mapRenderer.filterState.range);
 
         this.mapRenderer.updateLayers(
             this.boundaryManager.features,
-            this.currentData,
+            this.state.currentData,
             composite.key,
             metric,
             cfg,
@@ -3038,26 +3129,29 @@ class ChoroplethApp {
 class RangeFilterControlElement extends HTMLElement {
     constructor() {
         super();
-        this._configured = false;
+        Object.assign(this, this.#initState());
+    }
 
-        this.onChange = () => {};
-        this.formatValue = v => v;
-        this.toDisplay = v => v;
-        this.fromDisplay = v => v;
-
-        this.stats = null;
-        this.settings = null;
-        this.scaleObj = null;
-        this.normalizeValue = null;
-
-        this.domain = { min: 0, max: 1 };
-        this.hasBelowDomain = false;
-        this.hasAboveDomain = false;
-
-        this.dom = null;
-        this._handlers = null;
-        this._axisCanvas = null;
-        this._axisLabels = null;
+    #initState() {
+        return {
+            _configured: false,
+            onChange: () => {},
+            formatValue: v => v,
+            toDisplay: v => v,
+            fromDisplay: v => v,
+            stats: null,
+            settings: null,
+            scaleObj: null,
+            normalizeValue: null,
+            domain: { min: 0, max: 1 },
+            hasBelowDomain: false,
+            hasAboveDomain: false,
+            currentRange: null,
+            dom: null,
+            _handlers: null,
+            _axisCanvas: null,
+            _axisLabels: null
+        };
     }
 
     connectedCallback() {
