@@ -231,10 +231,10 @@ input[type="range"] {
     box-shadow: 0 0.1em 0.2em rgba(0, 0, 0, 0.18);
     min-width: 200px;
     max-width: calc(100% - 2em);
-    --bivar-size: clamp(6.5em, 16vw, 9em);
-    --bivar-axis: 1.25em;
-    --bivar-y-axis-w: 2.4em;
-    --bivar-y-label-max: 4em;
+    --bivar-diamond: clamp(8em, calc(7.35vw + 8em), 14rem);
+    --bivar-size: calc(var(--bivar-diamond) / sqrt(2));
+    --bivar-rotate: -45deg;
+    --bivar-label-pad: clamp(0.9rem, 2vw, 1.65rem);
     transition: padding 180ms ease, box-shadow 180ms ease;
 }
 
@@ -346,6 +346,8 @@ input[type="range"] {
 .bivar-description {
     font-size: 0.75em;
     color: rgb(85, 85, 85);
+    overflow-wrap: anywhere;
+    white-space: normal;
 }
 
 .legend-categorical {
@@ -414,82 +416,68 @@ input[type="range"] {
 
 .bivar-legend-text {
     margin-bottom: 1em;
+    max-width: var(--bivar-diamond);
 }
 
 .bivar-legend-container {
     display: grid;
-    grid-auto-columns: min-content;
-    gap: 0px 0px;
     grid-template-areas:
-        "bivar-y bivar-canvas-wrap"
-        ". bivar-x"
-        "bivar-info bivar-info";
-}
-
-.bivar-y {
-    display: flex;
-    align-items: stretch;
-    gap: 0;
-    grid-area: bivar-y;
-}
-
-.bivar-y-label {
-    flex: 0 1 auto;
-    writing-mode: vertical-rl;
-    transform: rotate(180deg);
-    height: var(--bivar-size);
-    max-inline-size: max-content;
-    white-space: normal;
-    overflow-wrap: anywhere;
-    margin: auto;
-}
-
-.bivar-y-axis {
-    flex: 0 0 auto;
-    width: var(--bivar-y-axis-w);
+        "bivar-canvas-wrap"
+        "bivar-info";
 }
 
 .bivar-canvas-wrap {
     grid-area: bivar-canvas-wrap;
-    width: var(--bivar-size);
-    height: var(--bivar-size);
+    width: var(--bivar-diamond);
+    height: var(--bivar-diamond);
+    margin: 0 var(--bivar-label-pad) var(--bivar-label-pad);
+    position: relative;
 }
 
-.bivar-canvas canvas {
-    image-rendering: pixelated;
+.bivar-svg {
     display: block;
+    width: 100%;
+    height: 100%;
+    color: #000;
+    overflow: visible;
 }
 
-.bivar-x {
-    display: grid;
-    grid-auto-columns: 1fr;
-    grid-auto-rows: min-content;
-    gap: 0px 0px;
-    grid-template-areas:
-        "bivar-x-axis"
-        "bivar-x-label";
-    grid-area: bivar-x;
+.bivar-svg-image {
+    image-rendering: pixelated;
 }
 
-.bivar-x-axis {
-    grid-area: bivar-x-axis;
-    height: var(--bivar-axis);
+.bivar-svg-axis {
+    stroke: rgba(0, 0, 0, 0.35);
+    stroke-width: 1;
 }
 
-.bivar-x-label {
-    grid-area: bivar-x-label;
+.bivar-svg-tick {
+    stroke: rgba(0, 0, 0, 0.75);
+    stroke-width: 1;
 }
 
-.bivar-y-label,
-.bivar-x-label {
-    text-align: center;
-    font-size: 0.8em;
-    font-weight: bold;
+.bivar-svg-tick-label {
+    font-size: 0.5em;
+    fill: currentColor;
 }
 
+.bivar-svg-tick-label-x,
+.bivar-svg-axis-label-x,
+.bivar-svg-tick-label-y,
+.bivar-svg-axis-label-y {
+    text-anchor: middle;
+    dominant-baseline: hanging;
+}
+
+.bivar-svg-axis-label {
+    font-size: 0.7em;
+    font-weight: 600;
+    fill: currentColor;
+}
 
 .bivar-info {
     grid-area: bivar-info;
+    justify-self: start;
     font-size: 0.6rem;
     font-weight: 400;
     color: grey;
@@ -515,16 +503,6 @@ input[type="range"] {
 .metric-axis .tick-label {
     top: 1em;
     transform: translate(-50%, 0);
-}
-
-.bivar-x .tick-label {
-    top: 1em;
-    transform: translate(-50%, 0);
-}
-
-.bivar-y .tick-label {
-    right: 1em;
-    transform: translate(0, -50%);
 }
 
 .loading {

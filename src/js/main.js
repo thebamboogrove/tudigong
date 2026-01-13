@@ -1908,8 +1908,10 @@ class MapRenderer {
             descEl.style.display = desc ? '' : 'none';
         }
 
-        yLabelEl.textContent = bivar.y.metric;
-        xLabelEl.textContent = bivar.x.metric;
+        const yLabelText = bivar?.y?.metric || '';
+        const xLabelText = bivar?.x?.metric || '';
+        if (yLabelEl) yLabelEl.textContent = '';
+        if (xLabelEl) xLabelEl.textContent = '';
 
         const blend = (c1, c2) => {
             if (blendMode === 'multiply') {
@@ -1932,14 +1934,48 @@ class MapRenderer {
             ];
         };
 
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const xlinkNS = 'http://www.w3.org/1999/xlink';
+        let svgEl = canvasWrap.querySelector('.bivar-svg');
+        if (!svgEl) {
+            svgEl = document.createElementNS(svgNS, 'svg');
+            svgEl.classList.add('bivar-svg');
+            svgEl.setAttribute('aria-hidden', 'true');
+            svgEl.setAttribute('focusable', 'false');
+            canvasWrap.replaceChildren(svgEl);
+        }
+
+        let imageEl = svgEl.querySelector('.bivar-svg-image');
+        if (!imageEl) {
+            imageEl = document.createElementNS(svgNS, 'image');
+            imageEl.classList.add('bivar-svg-image');
+            imageEl.setAttribute('preserveAspectRatio', 'none');
+            svgEl.appendChild(imageEl);
+        }
+
+        let rotGroup = svgEl.querySelector('.bivar-svg-rot');
+        if (!rotGroup) {
+            rotGroup = document.createElementNS(svgNS, 'g');
+            rotGroup.classList.add('bivar-svg-rot');
+            svgEl.appendChild(rotGroup);
+        }
+        if (imageEl.parentNode !== rotGroup) rotGroup.appendChild(imageEl);
+
+        let axisGroup = rotGroup.querySelector('.bivar-svg-axes');
+        if (!axisGroup) {
+            axisGroup = document.createElementNS(svgNS, 'g');
+            axisGroup.classList.add('bivar-svg-axes');
+            rotGroup.appendChild(axisGroup);
+        }
+
+        let labelGroup = rotGroup.querySelector('.bivar-svg-labels');
+        if (!labelGroup) {
+            labelGroup = document.createElementNS(svgNS, 'g');
+            labelGroup.classList.add('bivar-svg-labels');
+            rotGroup.appendChild(labelGroup);
+        }
+
         const bivarCanvas = document.createElement('canvas');
-        Object.assign(bivarCanvas.style, {
-            display: 'block',
-            width: '100%',
-            height: '100%',
-            imageRendering: 'pixelated'
-        });
-        canvasWrap.replaceChildren(bivarCanvas);
 
         const stepsX = Math.max(2, Number(xSet?.legendSteps || 4));
         const stepsY = Math.max(2, Number(ySet?.legendSteps || 4));
@@ -1997,32 +2033,8 @@ class MapRenderer {
             ticksY = ticksY.map(Number).filter(Number.isFinite);
         }
 
-        const makeAxisCanvas = (host) => {
-            host.style.position = host.style.position || 'relative';
-            host.replaceChildren();
-            const canvas = document.createElement('canvas');
-            Object.assign(canvas.style, {
-                position: 'absolute',
-                left: '0',
-                top: '0',
-                width: '100%',
-                height: '100%',
-                display: 'block'
-            });
-            host.appendChild(canvas);
-            return canvas;
-        };
-
-        const xAxisCanvas = makeAxisCanvas(xAxisEl);
-        const yAxisCanvas = makeAxisCanvas(yAxisEl);
-
-        const mkXLabel = (text, t) => {
-            const el = document.createElement('div');
-            el.className = 'tick-label';
-            el.style.left = `${t * 100}%`;
-            el.textContent = text;
-            return el;
-        };
+        if (xAxisEl) xAxisEl.replaceChildren();
+        if (yAxisEl) yAxisEl.replaceChildren();
 
         const formatEdgeLabel = (value, idx, maxIdx, hasBelow, hasAbove, set, stats) => {
             let text = this.formatValue(value, set, stats);
@@ -2031,6 +2043,9 @@ class MapRenderer {
             return text;
         };
 
+        const xLabelTicks = [];
+        const yLabelTicks = [];
+
         if (isBinned) {
             const xEdgeValues = (xBinner?.edges && xBinner.edges.length === binsX + 1)
                 ? xBinner.edges
@@ -2038,22 +2053,14 @@ class MapRenderer {
             xEdgeValues.forEach((value, i) => {
                 const t = edgeTX[i];
                 const label = formatEdgeLabel(value, i, xEdgeValues.length - 1, xHasBelowDomain, xHasAboveDomain, xSet, xStats);
-                xAxisEl.appendChild(mkXLabel(label, t));
+                xLabelTicks.push({ t, label });
             });
         } else {
             const minLabel = formatEdgeLabel(xMin, 0, 1, xHasBelowDomain, xHasAboveDomain, xSet, xStats);
             const maxLabel = formatEdgeLabel(xMax, 1, 1, xHasBelowDomain, xHasAboveDomain, xSet, xStats);
-            xAxisEl.appendChild(mkXLabel(minLabel, 0, 'left'));
-            xAxisEl.appendChild(mkXLabel(maxLabel, 1, 'right'));
+            xLabelTicks.push({ t: 0, label: minLabel });
+            xLabelTicks.push({ t: 1, label: maxLabel });
         }
-
-        const mkYLabel = (text, t) => {
-            const el = document.createElement('div');
-            el.className = 'tick-label';
-            el.style.top = `${(1 - t) * 100}%`;
-            el.textContent = text;
-            return el;
-        };
 
         if (isBinned) {
             const yEdgeValues = (yBinner?.edges && yBinner.edges.length === binsY + 1)
@@ -2062,14 +2069,21 @@ class MapRenderer {
             yEdgeValues.forEach((value, i) => {
                 const t = edgeTY[i];
                 const label = formatEdgeLabel(value, i, yEdgeValues.length - 1, yHasBelowDomain, yHasAboveDomain, ySet, yStats);
-                yAxisEl.appendChild(mkYLabel(label, t));
+                yLabelTicks.push({ t, label });
             });
         } else {
             const minLabel = formatEdgeLabel(yMin, 0, 1, yHasBelowDomain, yHasAboveDomain, ySet, yStats);
             const maxLabel = formatEdgeLabel(yMax, 1, 1, yHasBelowDomain, yHasAboveDomain, ySet, yStats);
-            yAxisEl.appendChild(mkYLabel(minLabel, 0));
-            yAxisEl.appendChild(mkYLabel(maxLabel, 1));
+            yLabelTicks.push({ t: 0, label: minLabel });
+            yLabelTicks.push({ t: 1, label: maxLabel });
         }
+
+        const ticksTX = (isBinned ? ticksX : ticksX.map(v => xScale.scale(v)))
+            .map(Number)
+            .filter(Number.isFinite);
+        const ticksTY = (isBinned ? ticksY : ticksY.map(v => yScale.scale(v)))
+            .map(Number)
+            .filter(Number.isFinite);
 
         const xScaleName = String(xSet?.scale || 'linear').toLowerCase();
         const xK = xScale.scale.__exponentRaw ?? xSet?.exponent;
@@ -2089,12 +2103,48 @@ class MapRenderer {
             };
         };
 
+        const setSvgAttrs = (el, attrs) => {
+            Object.entries(attrs).forEach(([key, value]) => {
+                if (value == null) return;
+                el.setAttribute(key, String(value));
+            });
+        };
+
+        const makeSvgEl = (tag, attrs, className) => {
+            const el = document.createElementNS(svgNS, tag);
+            if (className) el.setAttribute('class', className);
+            if (attrs) setSvgAttrs(el, attrs);
+            return el;
+        };
+
+        const getRotateDeg = () => {
+            const raw = getComputedStyle(canvasWrap).getPropertyValue('--bivar-rotate').trim();
+            if (!raw) return -45;
+            if (raw.endsWith('deg')) {
+                const parsed = parseFloat(raw.replace('deg', '').trim());
+                return Number.isFinite(parsed) ? parsed : -45;
+            }
+            const parsed = parseFloat(raw);
+            return Number.isFinite(parsed) ? parsed : -45;
+        };
+
         const render = () => {
             const { w: wrapW, h: wrapH } = readCssPx(canvasWrap);
-            const cssSize = Math.max(1, Math.min(wrapW, wrapH));
-            if (!Number.isFinite(cssSize) || cssSize <= 0) return;
+            const diamondSize = Math.max(1, Math.min(wrapW, wrapH));
+            if (!Number.isFinite(diamondSize) || diamondSize <= 0) return;
 
-            const pack = this.sizeCanvas(bivarCanvas, cssSize, cssSize, {
+            const baseSize = diamondSize / Math.SQRT2;
+            const inset = (diamondSize - baseSize) / 2;
+
+            svgEl.setAttribute('viewBox', `0 0 ${diamondSize} ${diamondSize}`);
+            svgEl.setAttribute('width', `${diamondSize}`);
+            svgEl.setAttribute('height', `${diamondSize}`);
+            imageEl.setAttribute('width', `${baseSize}`);
+            imageEl.setAttribute('height', `${baseSize}`);
+            imageEl.setAttribute('x', `${inset}`);
+            imageEl.setAttribute('y', `${inset}`);
+
+            const pack = this.sizeCanvas(bivarCanvas, baseSize, baseSize, {
                 style: { imageRendering: 'pixelated' }
             });
 
@@ -2156,39 +2206,102 @@ class MapRenderer {
                 pack.ctx.setTransform(pack.dpr, 0, 0, pack.dpr, 0, 0);
             }
 
-            const { w: xAxisW, h: xAxisH } = readCssPx(xAxisEl);
-            const xAxisPack = this.sizeCanvas(xAxisCanvas, xAxisW, xAxisH, {
-                style: { position: 'absolute', left: '0', top: '0' }
-            });
-            this.draw1DAxisCanvas({
-                ctx: xAxisPack.ctx,
-                crisp: xAxisPack.crisp,
-                cssW: xAxisPack.cssW,
-                cssH: xAxisPack.cssH,
-                ticksT: isBinned ? ticksX : ticksX.map(v => xScale.scale(v)),
-                tickLen: 6,
-                baseline: true
+            const dataUrl = bivarCanvas.toDataURL();
+            imageEl.setAttribute('href', dataUrl);
+            imageEl.setAttributeNS(xlinkNS, 'href', dataUrl);
+
+            const center = diamondSize / 2;
+            const rotateDeg = getRotateDeg();
+            rotGroup.setAttribute('transform', `rotate(${rotateDeg} ${center} ${center})`);
+
+            axisGroup.replaceChildren();
+            labelGroup.replaceChildren();
+
+            const tickLen = 6;
+            const labelPad = 6;
+            const titlePad = Math.max(10, baseSize * 0.08);
+
+            axisGroup.appendChild(makeSvgEl('line', {
+                x1: inset,
+                y1: inset + baseSize,
+                x2: inset + baseSize,
+                y2: inset + baseSize
+            }, 'bivar-svg-axis'));
+
+            axisGroup.appendChild(makeSvgEl('line', {
+                x1: inset,
+                y1: inset,
+                x2: inset,
+                y2: inset + baseSize
+            }, 'bivar-svg-axis'));
+
+            ticksTX.forEach((t) => {
+                if (!(t >= 0 && t <= 1)) return;
+                const x = inset + t * baseSize;
+                axisGroup.appendChild(makeSvgEl('line', {
+                    x1: x,
+                    y1: inset + baseSize,
+                    x2: x,
+                    y2: inset + baseSize + tickLen
+                }, 'bivar-svg-tick'));
             });
 
-            const { w: yAxisW, h: yAxisH } = readCssPx(yAxisEl);
-            const yAxisPack = this.sizeCanvas(yAxisCanvas, yAxisW, yAxisH, {
-                style: { position: 'absolute', left: '0', top: '0' }
+            ticksTY.forEach((t) => {
+                if (!(t >= 0 && t <= 1)) return;
+                const y = inset + (1 - t) * baseSize;
+                axisGroup.appendChild(makeSvgEl('line', {
+                    x1: inset,
+                    y1: y,
+                    x2: inset - tickLen,
+                    y2: y
+                }, 'bivar-svg-tick'));
             });
-            this.drawYAxisCanvas({
-                ctx: yAxisPack.ctx,
-                crisp: yAxisPack.crisp,
-                cssW: yAxisPack.cssW,
-                cssH: yAxisPack.cssH,
-                ticksT: isBinned ? ticksY : ticksY.map(v => yScale.scale(v)),
-                tickLen: 6,
-                baseline: true
+
+            xLabelTicks.forEach(({ t, label }) => {
+                if (!label) return;
+                const x = inset + t * baseSize;
+                const text = makeSvgEl('text', {
+                    x,
+                    y: inset + baseSize + tickLen + labelPad
+                }, 'bivar-svg-tick-label bivar-svg-tick-label-x');
+                text.textContent = label;
+                labelGroup.appendChild(text);
             });
+
+            yLabelTicks.forEach(({ t, label }) => {
+                if (!label) return;
+                const y = inset + (1 - t) * baseSize;
+                const text = makeSvgEl('text', {
+                    x: inset - tickLen - labelPad,
+                    y
+                }, 'bivar-svg-tick-label bivar-svg-tick-label-y');
+                text.setAttribute('transform', `rotate(90 ${inset - tickLen - labelPad} ${y})`);
+                text.textContent = label;
+                labelGroup.appendChild(text);
+            });
+
+            if (xLabelText) {
+                const text = makeSvgEl('text', {
+                    x: inset + baseSize / 2,
+                    y: inset + baseSize + tickLen + labelPad + titlePad
+                }, 'bivar-svg-axis-label bivar-svg-axis-label-x');
+                text.textContent = xLabelText;
+                labelGroup.appendChild(text);
+            }
+
+            if (yLabelText) {
+                const text = makeSvgEl('text', {
+                    x: inset - tickLen - labelPad - titlePad,
+                    y: inset + baseSize / 2
+                }, 'bivar-svg-axis-label bivar-svg-axis-label-y');
+                text.setAttribute('transform', `rotate(90 ${inset - tickLen - labelPad - titlePad} ${inset + baseSize / 2})`);
+                text.textContent = yLabelText;
+                labelGroup.appendChild(text);
+            }
         };
 
         const ro = new ResizeObserver(render);
         ro.observe(canvasWrap);
-        ro.observe(xAxisEl);
-        ro.observe(yAxisEl);
         window.addEventListener('resize', render, { passive: true });
 
         this.legendState.cleanup = () => {
