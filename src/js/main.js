@@ -911,7 +911,7 @@ class MapRenderer {
         console.log('Base zoom: ' + this.baseZoom);
 
         this.deckgl = new Deck({
-            useDevicePixels: false,
+            useDevicePixels: true,
             parent: container,
             views: [new OrthographicView({ id: 'ortho', flipY: false })],
             initialViewState,
