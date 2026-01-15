@@ -387,6 +387,10 @@ input[type="range"] {
     padding-bottom: 1.5rem;
 }
 
+.legend-axis {
+    width: 220px;
+}
+
 .legend-tick,
 .legend-minor-tick {
     position: absolute;
@@ -490,6 +494,40 @@ input[type="range"] {
     right: 0;
     height: 1pt;
     background: #e3e3e3;
+}
+
+.legend-axis-svg,
+.metric-axis-svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+    shape-rendering: crispEdges;
+}
+
+.legend-axis-line,
+.metric-axis-line {
+    stroke: rgb(81, 81, 81);
+    stroke-width: 1;
+}
+
+.legend-axis-tick {
+    stroke: rgb(48, 48, 48);
+    stroke-width: 1;
+}
+
+.metric-axis-tick {
+    stroke: rgb(61, 61, 61);
+    stroke-width: 1;
+}
+
+.legend-axis-label,
+.metric-axis-label {
+    font-size: 0.6rem;
+    fill: currentColor;
+    text-anchor: middle;
+    dominant-baseline: hanging;
 }
 
 .tick-label {
@@ -728,7 +766,7 @@ range-filter-control .dual-range .metric-axis {
     left: 2px;
 }
 
-range-filter-control .dual-range .metric-axis canvas {
+range-filter-control .dual-range .metric-axis svg {
     max-width: 100%;
     min-width: 100%;
 }

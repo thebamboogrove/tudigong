@@ -5,6 +5,187 @@ import { GeoJsonLayer, PathLayer } from '@deck.gl/layers';
 import { PathStyleExtension } from '@deck.gl/extensions';
 import { feature as topojsonFeature, mesh as topojsonMesh } from 'topojson-client';
 
+const AXIS_TEMPLATE_ID = 'axis-svg-template';
+
+const buildAxisSvgFromTemplate = (container, { svgClass = '', labelClass = '' } = {}) => {
+    if (!container) return null;
+    const tpl = document.getElementById(AXIS_TEMPLATE_ID);
+    if (!tpl) return null;
+
+    const frag = tpl.content.cloneNode(true);
+    const svg = frag.querySelector('svg');
+    const ticksGroup = frag.querySelector('.axis-ticks');
+    const labelMin = frag.querySelector('.axis-label-min');
+    const labelMax = frag.querySelector('.axis-label-max');
+    const labelMid = frag.querySelector('.axis-label-mid');
+
+    if (!svg || !ticksGroup || !labelMin || !labelMax || !labelMid) return null;
+
+    if (svgClass) svg.classList.add(svgClass);
+    if (labelClass) [labelMin, labelMax, labelMid].forEach(el => el.classList.add(labelClass));
+
+    container.replaceChildren(frag);
+
+    return {
+        svg,
+        ticksGroup,
+        labelMin,
+        labelMax,
+        labelMid
+    };
+};
+
+const renderSvgAxis = ({
+    axis,
+    width,
+    height,
+    ticksT = [],
+    labels = {},
+    orientation = 'x',
+    baseOffset = 2,
+    tickLen = 6,
+    tickDir = 1,
+    labelPad = 2,
+    flip = false,
+    drawAxisLine = true,
+    axisLineClass = '',
+    tickClass = '',
+    labelAnchor = null,
+    labelBaseline = null,
+    labelRotation = 0
+} = {}) => {
+    if (!axis?.svg || !axis?.ticksGroup) return;
+
+    const axisW = Math.max(1, Number(width) || 1);
+    const axisH = Math.max(1, Number(height) || 1);
+
+    axis.svg.removeAttribute('viewBox');
+    axis.svg.setAttribute('width', '100%');
+    axis.svg.setAttribute('height', '100%');
+    axis.svg.setAttribute('shape-rendering', 'crispEdges');
+
+    axis.ticksGroup.replaceChildren();
+
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const makeLine = (x1, y1, x2, y2, className) => {
+        const line = document.createElementNS(svgNS, 'line');
+        if (className) line.setAttribute('class', className);
+        line.setAttribute('x1', `${x1}`);
+        line.setAttribute('y1', `${y1}`);
+        line.setAttribute('x2', `${x2}`);
+        line.setAttribute('y2', `${y2}`);
+        line.setAttribute('vector-effect', 'non-scaling-stroke');
+        return line;
+    };
+
+    const tToPct = (t) => {
+        const tt = Number(t);
+        if (!Number.isFinite(tt)) return null;
+        const clamped = Math.max(0, Math.min(1, tt));
+        const posT = flip ? 1 - clamped : clamped;
+        return `${posT * 100}%`;
+    };
+
+    const base = Math.round(baseOffset);
+    const tickLenPx = Math.round(tickLen);
+    const dir = tickDir >= 0 ? 1 : -1;
+    const toPx = (val, spanPx) => {
+        if (typeof val === 'string' && val.endsWith('%')) {
+            const pct = Number.parseFloat(val);
+            if (Number.isFinite(pct)) return (pct / 100) * spanPx;
+        }
+        return Number(val);
+    };
+
+    const normalizeLabel = (spec, fallbackT) => {
+        if (spec == null) return null;
+        if (typeof spec === 'string' || typeof spec === 'number') {
+            return { text: String(spec), t: fallbackT };
+        }
+        if (typeof spec === 'object') {
+            const text = spec.text ?? spec.label ?? spec.value ?? '';
+            if (text === '' || text == null) return null;
+            const t = Number.isFinite(spec.t) ? spec.t : fallbackT;
+            return { text: String(text), t, rotate: spec.rotate, anchor: spec.anchor, baseline: spec.baseline };
+        }
+        return null;
+    };
+
+    const applyLabel = (labelEl, spec, fallbackT, posX, posY) => {
+        if (!labelEl) return;
+        const normalized = normalizeLabel(spec, fallbackT);
+        if (!normalized) {
+            labelEl.style.display = 'none';
+            labelEl.textContent = '';
+            labelEl.removeAttribute('transform');
+            return;
+        }
+
+        const posT = tToPct(normalized.t);
+        if (posT == null) {
+            labelEl.style.display = 'none';
+            labelEl.textContent = '';
+            labelEl.removeAttribute('transform');
+            return;
+        }
+
+        const x = orientation === 'x' ? posT : posX;
+        const y = orientation === 'x' ? posY : posT;
+
+        labelEl.style.display = '';
+        labelEl.textContent = normalized.text;
+        labelEl.setAttribute('x', `${x}`);
+        labelEl.setAttribute('y', `${y}`);
+
+        const anchor = normalized.anchor ?? labelAnchor;
+        if (anchor) labelEl.setAttribute('text-anchor', anchor);
+
+        const baseline = normalized.baseline ?? labelBaseline;
+        if (baseline) labelEl.setAttribute('dominant-baseline', baseline);
+
+        const rotate = Number.isFinite(normalized.rotate) ? normalized.rotate : labelRotation;
+        if (Number.isFinite(rotate) && rotate !== 0) {
+            const xPx = toPx(x, axisW);
+            const yPx = toPx(y, axisH);
+            if (Number.isFinite(xPx) && Number.isFinite(yPx)) {
+                labelEl.setAttribute('transform', `rotate(${rotate} ${xPx} ${yPx})`);
+            } else {
+                labelEl.removeAttribute('transform');
+            }
+        } else {
+            labelEl.removeAttribute('transform');
+        }
+    };
+
+    if (orientation === 'x') {
+        if (drawAxisLine) {
+            axis.ticksGroup.appendChild(makeLine('0%', base, '100%', base, axisLineClass));
+        }
+        ticksT.forEach((t) => {
+            const x = tToPct(t);
+            if (x == null) return;
+            axis.ticksGroup.appendChild(makeLine(x, base, x, base + tickLenPx * dir, tickClass));
+        });
+        const labelY = Math.round(base + tickLenPx * dir + labelPad * dir);
+        applyLabel(axis.labelMin, labels.min, 0, '0%', labelY);
+        applyLabel(axis.labelMax, labels.max, 1, '100%', labelY);
+        applyLabel(axis.labelMid, labels.mid, 0.5, '50%', labelY);
+    } else {
+        if (drawAxisLine) {
+            axis.ticksGroup.appendChild(makeLine(base, '0%', base, '100%', axisLineClass));
+        }
+        ticksT.forEach((t) => {
+            const y = tToPct(t);
+            if (y == null) return;
+            axis.ticksGroup.appendChild(makeLine(base, y, base + tickLenPx * dir, y, tickClass));
+        });
+        const labelX = Math.round(base + tickLenPx * dir + labelPad * dir);
+        applyLabel(axis.labelMin, labels.min, 0, labelX, '0%');
+        applyLabel(axis.labelMax, labels.max, 1, labelX, '100%');
+        applyLabel(axis.labelMid, labels.mid, 0.5, labelX, '50%');
+    }
+};
+
 class BoundaryManager {
     constructor() {
         Object.assign(this, this.#initState());
@@ -807,29 +988,12 @@ class MapRenderer {
         canvasWrap.replaceChildren(gradCanvas);
 
         axisEl.style.position = axisEl.style.position || 'relative';
-        const axisCanvas = document.createElement('canvas');
-        Object.assign(axisCanvas.style, {
-            position: 'absolute',
-            left: '0',
-            top: '0',
-            display: 'block',
-            width: '220px',
-            height: '100%'
+
+        const axis = buildAxisSvgFromTemplate(axisEl, {
+            svgClass: 'legend-axis-svg',
+            labelClass: 'legend-axis-label'
         });
-        axisEl.replaceChildren(axisCanvas);
-
-        const minLabel = document.createElement('div');
-        minLabel.className = 'tick-label';
-        axisEl.appendChild(minLabel);
-
-        const maxLabel = document.createElement('div');
-        maxLabel.className = 'tick-label';
-        axisEl.appendChild(maxLabel);
-
-        const midLabel = document.createElement('div');
-        midLabel.className = 'tick-label';
-        midLabel.style.display = 'none';
-        axisEl.appendChild(midLabel);
+        if (!axis) return null;
 
         this.legendState.cache = {
             type: 'gradient',
@@ -840,8 +1004,7 @@ class MapRenderer {
             axisEl,
             badgeEl,
             gradCanvas,
-            axisCanvas,
-            axisLabels: { min: minLabel, max: maxLabel, mid: midLabel }
+            axis
         };
         return this.legendState.cache;
     }
@@ -1683,9 +1846,6 @@ class MapRenderer {
 
         const axisCssW = cssW;
         const axisCssH = Math.max(1, Math.round(cache.axisEl.clientHeight || 26));
-        const axisCanvasPack = this.sizeCanvas(cache.axisCanvas, axisCssW, axisCssH, {
-            style: { position: 'absolute', left: '0', top: '0' }
-        });
 
         const scale = normalizeValue.scale;
         const stepCount = Math.max(2, Number(settings?.legendSteps || 6));
@@ -1700,15 +1860,8 @@ class MapRenderer {
         ticks = ticks.map(Number).filter(Number.isFinite);
 
         const ticksT = ticks.map(v => scale(v)).filter(t => t >= 0 && t <= 1);
-        this.draw1DAxisCanvas({
-            ctx: axisCanvasPack.ctx,
-            crisp: axisCanvasPack.crisp,
-            cssW: axisCanvasPack.cssW,
-            cssH: axisCanvasPack.cssH,
-            ticksT,
-            tickLen: 6,
-            baseline: true
-        });
+
+        const axis = cache.axis;
 
         const eps = (Number.isFinite(stats?.max) && Number.isFinite(stats?.min))
             ? Math.max(1e-12, (stats.max - stats.min) * 1e-9)
@@ -1716,34 +1869,49 @@ class MapRenderer {
         const hasBelowDomain = Number.isFinite(stats?.min) && (stats.min < dmin - eps);
         const hasAboveDomain = Number.isFinite(stats?.max) && (stats.max > dmax + eps);
 
-        if (cache.axisLabels?.min) {
-            cache.axisLabels.min.style.left = '0%';
-            cache.axisLabels.min.textContent = hasBelowDomain
-                ? `≤ ${this.formatValue(dmin, settings, stats)}`
-                : this.formatValue(dmin, settings, stats);
-        }
-        if (cache.axisLabels?.max) {
-            cache.axisLabels.max.style.left = '100%';
-            cache.axisLabels.max.textContent = hasAboveDomain
-                ? `≥ ${this.formatValue(dmax, settings, stats)}`
-                : this.formatValue(dmax, settings, stats);
-        }
+        const labels = {
+            min: {
+                t: 0,
+                text: hasBelowDomain
+                    ? `≤ ${this.formatValue(dmin, settings, stats)}`
+                    : this.formatValue(dmin, settings, stats)
+            },
+            max: {
+                t: 1,
+                text: hasAboveDomain
+                    ? `≥ ${this.formatValue(dmax, settings, stats)}`
+                    : this.formatValue(dmax, settings, stats)
+            }
+        };
 
         if (ticks.length <= 3 && ticks.length === stepCount) {
             const midIdx = Math.floor(ticks.length / 2);
             if (midIdx > 0 && midIdx < ticks.length - 1) {
                 const tMid = scale(ticks[midIdx]);
-                if (cache.axisLabels?.mid) {
-                    cache.axisLabels.mid.style.left = `${tMid * 100}%`;
-                    cache.axisLabels.mid.textContent = this.formatValue(ticks[midIdx], settings, stats);
-                    cache.axisLabels.mid.style.display = '';
-                }
-            } else if (cache.axisLabels?.mid) {
-                cache.axisLabels.mid.style.display = 'none';
+                labels.mid = {
+                    t: tMid,
+                    text: this.formatValue(ticks[midIdx], settings, stats)
+                };
             }
-        } else if (cache.axisLabels?.mid) {
-            cache.axisLabels.mid.style.display = 'none';
         }
+
+        if (axis) {
+            renderSvgAxis({
+                axis,
+                width: axisCssW,
+                height: axisCssH,
+                ticksT,
+                labels,
+                orientation: 'x',
+                baseOffset: 2,
+                tickLen: 6,
+                tickDir: 1,
+                labelPad: 2,
+                axisLineClass: 'legend-axis-line',
+                tickClass: 'legend-axis-tick'
+            });
+        }
+
 
         const scaleName = String(settings?.scale || 'linear').toLowerCase();
         if (scaleName === 'pow') {
@@ -3262,8 +3430,7 @@ class RangeFilterControlElement extends HTMLElement {
             currentRange: null,
             dom: null,
             _handlers: null,
-            _axisCanvas: null,
-            _axisLabels: null
+            _axis: null
         };
     }
 
@@ -3445,43 +3612,20 @@ class RangeFilterControlElement extends HTMLElement {
             return;
         }
 
-        const dpr = window.devicePixelRatio || 1;
         const cssW = Math.max(1, Math.round(axis.clientWidth || 220));
         const cssH = Math.max(1, Math.round(axis.clientHeight || 14));
 
         axis.style.position = axis.style.position || 'relative';
 
-        if (!this._axisCanvas) {
-            axis.replaceChildren();
-
-            const canvas = document.createElement('canvas');
-            canvas.style.position = 'absolute';
-            canvas.style.left = '0';
-            canvas.style.top = '0';
-            axis.appendChild(canvas);
-
-            const minLabel = document.createElement('div');
-            minLabel.className = 'tick-label';
-            axis.appendChild(minLabel);
-
-            const maxLabel = document.createElement('div');
-            maxLabel.className = 'tick-label';
-            axis.appendChild(maxLabel);
-
-            this._axisCanvas = canvas;
-            this._axisLabels = { min: minLabel, max: maxLabel };
+        if (!this._axis) {
+            this._axis = buildAxisSvgFromTemplate(axis, {
+                svgClass: 'metric-axis-svg',
+                labelClass: 'metric-axis-label'
+            });
         }
 
-        const canvas = this._axisCanvas;
-        canvas.style.width = `${cssW}px`;
-        canvas.style.height = `${cssH}px`;
-        canvas.width = Math.max(1, Math.round(cssW * dpr));
-        canvas.height = Math.max(1, Math.round(cssH * dpr));
-
-        const ctx = canvas.getContext('2d');
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-        const crisp = (x) => (Math.round(x * dpr) + 0.5) / dpr;
+        const axisPack = this._axis;
+        if (!axisPack) return;
 
         const majorCount = Math.max(2, Number(this.settings?.legendSteps || 6));
         let ticks = d3.range(majorCount).map(i => dmin + (i / (majorCount - 1)) * (dmax - dmin));
@@ -3489,45 +3633,42 @@ class RangeFilterControlElement extends HTMLElement {
         ticks[ticks.length - 1] = dmax;
         ticks = ticks.map(Number).filter(Number.isFinite);
 
-        // baseline
-        const y0 = crisp(2);
-        ctx.strokeStyle = 'rgba(0,0,0,0.35)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(0, y0);
-        ctx.lineTo(cssW, y0);
-        ctx.stroke();
+        const ticksT = ticks.map(v => this.#tOf(v)).filter(t => t >= 0 && t <= 1);
 
-        // tick marks
-        const tickH = 6;
-        ctx.strokeStyle = 'rgba(0,0,0,0.55)';
-        ctx.beginPath();
-        ticks.forEach((v) => {
-            const t = this.#tOf(v);
-            if (t < 0 || t > 1) return;
-            const x = crisp(t * (cssW - 1));
-            ctx.moveTo(x, y0);
-            ctx.lineTo(x, y0 + tickH);
-        });
-        ctx.stroke();
-
-        // labels (endpoints only) in DOM
+        // labels (endpoints only) in SVG
         const eps = (Number.isFinite(this.stats?.max) && Number.isFinite(this.stats?.min))
             ? Math.max(1e-12, (this.stats.max - this.stats.min) * 1e-9)
             : 1e-12;
         const hasBelowDomain = Number.isFinite(this.stats?.min) && (this.stats.min < dmin - eps);
         const hasAboveDomain = Number.isFinite(this.stats?.max) && (this.stats.max > dmax + eps);
 
-        const minLabel = this._axisLabels?.min;
-        const maxLabel = this._axisLabels?.max;
-        if (minLabel) {
-            minLabel.style.left = '0%';
-            minLabel.textContent = hasBelowDomain ? `≤ ${this.formatValue(dmin)}` : this.formatValue(dmin);
-        }
-        if (maxLabel) {
-            maxLabel.style.left = '100%';
-            maxLabel.textContent = hasAboveDomain ? `≥ ${this.formatValue(dmax)}` : this.formatValue(dmax);
-        }
+        const labels = {
+            min: {
+                t: 0,
+                text: hasBelowDomain ? `≤ ${this.formatValue(dmin)}` : this.formatValue(dmin)
+            },
+            max: {
+                t: 1,
+                text: hasAboveDomain ? `≥ ${this.formatValue(dmax)}` : this.formatValue(dmax)
+            }
+        };
+
+        renderSvgAxis({
+            axis: axisPack,
+            width: cssW,
+            height: cssH,
+            ticksT,
+            labels,
+            orientation: 'x',
+            baseOffset: 2,
+            tickLen: 6,
+            tickDir: 1,
+            labelPad: 2,
+            drawAxisLine: false,
+            axisLineClass: 'metric-axis-line',
+            tickClass: 'metric-axis-tick'
+        });
+
     }
 
     #tOf(v) {

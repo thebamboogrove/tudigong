@@ -138,6 +138,17 @@
             </div>
         </template>
 
+        <template id="axis-svg-template">
+            <svg class="axis-svg" aria-hidden="true" focusable="false">
+                <g class="axis-ticks"></g>
+                <g class="axis-labels">
+                    <text class="axis-label axis-label-min"></text>
+                    <text class="axis-label axis-label-max"></text>
+                    <text class="axis-label axis-label-mid" style="display:none;"></text>
+                </g>
+            </svg>
+        </template>
+
         <template id="range-filter-tick-template">
             <div class="tick">
                 <div class="tick-line"></div>
