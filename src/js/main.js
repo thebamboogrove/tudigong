@@ -5,187 +5,6 @@ import { GeoJsonLayer, PathLayer } from '@deck.gl/layers';
 import { PathStyleExtension } from '@deck.gl/extensions';
 import { feature as topojsonFeature, mesh as topojsonMesh } from 'topojson-client';
 
-const AXIS_TEMPLATE_ID = 'axis-svg-template';
-
-const buildAxisSvgFromTemplate = (container, { svgClass = '', labelClass = '' } = {}) => {
-    if (!container) return null;
-    const tpl = document.getElementById(AXIS_TEMPLATE_ID);
-    if (!tpl) return null;
-
-    const frag = tpl.content.cloneNode(true);
-    const svg = frag.querySelector('svg');
-    const ticksGroup = frag.querySelector('.axis-ticks');
-    const labelMin = frag.querySelector('.axis-label-min');
-    const labelMax = frag.querySelector('.axis-label-max');
-    const labelMid = frag.querySelector('.axis-label-mid');
-
-    if (!svg || !ticksGroup || !labelMin || !labelMax || !labelMid) return null;
-
-    if (svgClass) svg.classList.add(svgClass);
-    if (labelClass) [labelMin, labelMax, labelMid].forEach(el => el.classList.add(labelClass));
-
-    container.replaceChildren(frag);
-
-    return {
-        svg,
-        ticksGroup,
-        labelMin,
-        labelMax,
-        labelMid
-    };
-};
-
-const renderSvgAxis = ({
-    axis,
-    width,
-    height,
-    ticksT = [],
-    labels = {},
-    orientation = 'x',
-    baseOffset = 2,
-    tickLen = 6,
-    tickDir = 1,
-    labelPad = 2,
-    flip = false,
-    drawAxisLine = true,
-    axisLineClass = '',
-    tickClass = '',
-    labelAnchor = null,
-    labelBaseline = null,
-    labelRotation = 0
-} = {}) => {
-    if (!axis?.svg || !axis?.ticksGroup) return;
-
-    const axisW = Math.max(1, Number(width) || 1);
-    const axisH = Math.max(1, Number(height) || 1);
-
-    axis.svg.removeAttribute('viewBox');
-    axis.svg.setAttribute('width', '100%');
-    axis.svg.setAttribute('height', '100%');
-    axis.svg.setAttribute('shape-rendering', 'crispEdges');
-
-    axis.ticksGroup.replaceChildren();
-
-    const svgNS = 'http://www.w3.org/2000/svg';
-    const makeLine = (x1, y1, x2, y2, className) => {
-        const line = document.createElementNS(svgNS, 'line');
-        if (className) line.setAttribute('class', className);
-        line.setAttribute('x1', `${x1}`);
-        line.setAttribute('y1', `${y1}`);
-        line.setAttribute('x2', `${x2}`);
-        line.setAttribute('y2', `${y2}`);
-        line.setAttribute('vector-effect', 'non-scaling-stroke');
-        return line;
-    };
-
-    const tToPct = (t) => {
-        const tt = Number(t);
-        if (!Number.isFinite(tt)) return null;
-        const clamped = Math.max(0, Math.min(1, tt));
-        const posT = flip ? 1 - clamped : clamped;
-        return `${posT * 100}%`;
-    };
-
-    const base = Math.round(baseOffset);
-    const tickLenPx = Math.round(tickLen);
-    const dir = tickDir >= 0 ? 1 : -1;
-    const toPx = (val, spanPx) => {
-        if (typeof val === 'string' && val.endsWith('%')) {
-            const pct = Number.parseFloat(val);
-            if (Number.isFinite(pct)) return (pct / 100) * spanPx;
-        }
-        return Number(val);
-    };
-
-    const normalizeLabel = (spec, fallbackT) => {
-        if (spec == null) return null;
-        if (typeof spec === 'string' || typeof spec === 'number') {
-            return { text: String(spec), t: fallbackT };
-        }
-        if (typeof spec === 'object') {
-            const text = spec.text ?? spec.label ?? spec.value ?? '';
-            if (text === '' || text == null) return null;
-            const t = Number.isFinite(spec.t) ? spec.t : fallbackT;
-            return { text: String(text), t, rotate: spec.rotate, anchor: spec.anchor, baseline: spec.baseline };
-        }
-        return null;
-    };
-
-    const applyLabel = (labelEl, spec, fallbackT, posX, posY) => {
-        if (!labelEl) return;
-        const normalized = normalizeLabel(spec, fallbackT);
-        if (!normalized) {
-            labelEl.style.display = 'none';
-            labelEl.textContent = '';
-            labelEl.removeAttribute('transform');
-            return;
-        }
-
-        const posT = tToPct(normalized.t);
-        if (posT == null) {
-            labelEl.style.display = 'none';
-            labelEl.textContent = '';
-            labelEl.removeAttribute('transform');
-            return;
-        }
-
-        const x = orientation === 'x' ? posT : posX;
-        const y = orientation === 'x' ? posY : posT;
-
-        labelEl.style.display = '';
-        labelEl.textContent = normalized.text;
-        labelEl.setAttribute('x', `${x}`);
-        labelEl.setAttribute('y', `${y}`);
-
-        const anchor = normalized.anchor ?? labelAnchor;
-        if (anchor) labelEl.setAttribute('text-anchor', anchor);
-
-        const baseline = normalized.baseline ?? labelBaseline;
-        if (baseline) labelEl.setAttribute('dominant-baseline', baseline);
-
-        const rotate = Number.isFinite(normalized.rotate) ? normalized.rotate : labelRotation;
-        if (Number.isFinite(rotate) && rotate !== 0) {
-            const xPx = toPx(x, axisW);
-            const yPx = toPx(y, axisH);
-            if (Number.isFinite(xPx) && Number.isFinite(yPx)) {
-                labelEl.setAttribute('transform', `rotate(${rotate} ${xPx} ${yPx})`);
-            } else {
-                labelEl.removeAttribute('transform');
-            }
-        } else {
-            labelEl.removeAttribute('transform');
-        }
-    };
-
-    if (orientation === 'x') {
-        if (drawAxisLine) {
-            axis.ticksGroup.appendChild(makeLine('0%', base, '100%', base, axisLineClass));
-        }
-        ticksT.forEach((t) => {
-            const x = tToPct(t);
-            if (x == null) return;
-            axis.ticksGroup.appendChild(makeLine(x, base, x, base + tickLenPx * dir, tickClass));
-        });
-        const labelY = Math.round(base + tickLenPx * dir + labelPad * dir);
-        applyLabel(axis.labelMin, labels.min, 0, '0%', labelY);
-        applyLabel(axis.labelMax, labels.max, 1, '100%', labelY);
-        applyLabel(axis.labelMid, labels.mid, 0.5, '50%', labelY);
-    } else {
-        if (drawAxisLine) {
-            axis.ticksGroup.appendChild(makeLine(base, '0%', base, '100%', axisLineClass));
-        }
-        ticksT.forEach((t) => {
-            const y = tToPct(t);
-            if (y == null) return;
-            axis.ticksGroup.appendChild(makeLine(base, y, base + tickLenPx * dir, y, tickClass));
-        });
-        const labelX = Math.round(base + tickLenPx * dir + labelPad * dir);
-        applyLabel(axis.labelMin, labels.min, 0, labelX, '0%');
-        applyLabel(axis.labelMax, labels.max, 1, labelX, '100%');
-        applyLabel(axis.labelMid, labels.mid, 0.5, labelX, '50%');
-    }
-};
-
 class BoundaryManager {
     constructor() {
         Object.assign(this, this.#initState());
@@ -688,6 +507,337 @@ class DataManager {
         };
     }
 }
+
+
+const AXIS_TEMPLATE_ID = 'axis-svg-template';
+
+const buildAxisSvgFromTemplate = (container, { svgClass = '', labelClass = '' } = {}) => {
+    if (!container) return null;
+    const tpl = document.getElementById(AXIS_TEMPLATE_ID);
+    if (!tpl) return null;
+
+    const frag = tpl.content.cloneNode(true);
+    const svg = frag.querySelector('svg');
+    const ticksGroup = frag.querySelector('.axis-ticks');
+    const labelMin = frag.querySelector('.axis-label-min');
+    const labelMax = frag.querySelector('.axis-label-max');
+    const labelMid = frag.querySelector('.axis-label-mid');
+
+    if (!svg || !ticksGroup || !labelMin || !labelMax || !labelMid) return null;
+
+    if (svgClass) svg.classList.add(svgClass);
+    if (labelClass) [labelMin, labelMax, labelMid].forEach(el => el.classList.add(labelClass));
+
+    container.replaceChildren(frag);
+
+    return {
+        svg,
+        ticksGroup,
+        labelMin,
+        labelMax,
+        labelMid
+    };
+};
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+const createSvgLine = (x1, y1, x2, y2, className) => {
+    const line = document.createElementNS(SVG_NS, 'line');
+    if (className) line.setAttribute('class', className);
+    line.setAttribute('x1', `${x1}`);
+    line.setAttribute('y1', `${y1}`);
+    line.setAttribute('x2', `${x2}`);
+    line.setAttribute('y2', `${y2}`);
+    line.setAttribute('vector-effect', 'non-scaling-stroke');
+    return line;
+};
+
+const percentFromT = (t, flip) => {
+    const tt = Number(t);
+    if (!Number.isFinite(tt)) return null;
+    const clamped = Math.max(0, Math.min(1, tt));
+    const posT = flip ? 1 - clamped : clamped;
+    return `${posT * 100}%`;
+};
+
+const toPx = (val, spanPx) => {
+    if (typeof val === 'string' && val.endsWith('%')) {
+        const pct = Number.parseFloat(val);
+        if (Number.isFinite(pct)) return (pct / 100) * spanPx;
+    }
+    return Number(val);
+};
+
+const normalizeAxisLabelSpec = (spec, fallbackT) => {
+    if (spec == null) return null;
+    if (typeof spec === 'string' || typeof spec === 'number') {
+        return { text: String(spec), t: fallbackT };
+    }
+    if (typeof spec === 'object') {
+        const text = spec.text ?? spec.label ?? spec.value ?? '';
+        if (text === '' || text == null) return null;
+        const t = Number.isFinite(spec.t) ? spec.t : fallbackT;
+        return { text: String(text), t, rotate: spec.rotate, anchor: spec.anchor, baseline: spec.baseline };
+    }
+    return null;
+};
+
+const applyAxisLabel = (labelEl, spec, fallbackT, posX, posY, context = {}) => {
+    if (!labelEl) return;
+    const {
+        orientation,
+        labelAnchor,
+        labelBaseline,
+        labelRotation,
+        axisW,
+        axisH,
+        toPct
+    } = context;
+    const normalized = normalizeAxisLabelSpec(spec, fallbackT);
+    if (!normalized) {
+        labelEl.style.display = 'none';
+        labelEl.textContent = '';
+        labelEl.removeAttribute('transform');
+        return;
+    }
+
+    const posT = typeof toPct === 'function' ? toPct(normalized.t) : null;
+    if (posT == null) {
+        labelEl.style.display = 'none';
+        labelEl.textContent = '';
+        labelEl.removeAttribute('transform');
+        return;
+    }
+
+    const x = orientation === 'x' ? posT : posX;
+    const y = orientation === 'x' ? posY : posT;
+
+    labelEl.style.display = '';
+    labelEl.textContent = normalized.text;
+    labelEl.setAttribute('x', `${x}`);
+    labelEl.setAttribute('y', `${y}`);
+
+    const anchor = normalized.anchor ?? labelAnchor;
+    if (anchor) labelEl.setAttribute('text-anchor', anchor);
+
+    const baseline = normalized.baseline ?? labelBaseline;
+    if (baseline) labelEl.setAttribute('dominant-baseline', baseline);
+
+    const rotate = Number.isFinite(normalized.rotate) ? normalized.rotate : labelRotation;
+    if (Number.isFinite(rotate) && rotate !== 0) {
+        const xPx = toPx(x, axisW);
+        const yPx = toPx(y, axisH);
+        if (Number.isFinite(xPx) && Number.isFinite(yPx)) {
+            labelEl.setAttribute('transform', `rotate(${rotate} ${xPx} ${yPx})`);
+        } else {
+            labelEl.removeAttribute('transform');
+        }
+    } else {
+        labelEl.removeAttribute('transform');
+    }
+};
+
+const renderSvgAxis = ({
+    axis,
+    width,
+    height,
+    ticksT = [],
+    labels = {},
+    orientation = 'x',
+    baseOffset = 2,
+    tickLen = 6,
+    tickDir = 1,
+    labelPad = 2,
+    flip = false,
+    drawAxisLine = true,
+    axisLineClass = '',
+    tickClass = '',
+    labelAnchor = null,
+    labelBaseline = null,
+    labelRotation = 0
+} = {}) => {
+    if (!axis?.svg || !axis?.ticksGroup) return;
+
+    const axisW = Math.max(1, Number(width) || 1);
+    const axisH = Math.max(1, Number(height) || 1);
+
+    axis.svg.removeAttribute('viewBox');
+    axis.svg.setAttribute('width', '100%');
+    axis.svg.setAttribute('height', '100%');
+    axis.svg.setAttribute('shape-rendering', 'crispEdges');
+
+    axis.ticksGroup.replaceChildren();
+
+    const base = Math.round(baseOffset);
+    const tickLenPx = Math.round(tickLen);
+    const dir = tickDir >= 0 ? 1 : -1;
+    const toPct = (t) => percentFromT(t, flip);
+
+    const labelContext = {
+        orientation,
+        labelAnchor,
+        labelBaseline,
+        labelRotation,
+        axisW,
+        axisH,
+        toPct
+    };
+    const applyLabel = (labelEl, spec, fallbackT, posX, posY) => {
+        applyAxisLabel(labelEl, spec, fallbackT, posX, posY, labelContext);
+    };
+
+    if (orientation === 'x') {
+        if (drawAxisLine) {
+            axis.ticksGroup.appendChild(createSvgLine('0%', base, '100%', base, axisLineClass));
+        }
+        ticksT.forEach((t) => {
+            const x = toPct(t);
+            if (x == null) return;
+            axis.ticksGroup.appendChild(createSvgLine(x, base, x, base + tickLenPx * dir, tickClass));
+        });
+        const labelY = Math.round(base + tickLenPx * dir + labelPad * dir);
+        applyLabel(axis.labelMin, labels.min, 0, '0%', labelY);
+        applyLabel(axis.labelMax, labels.max, 1, '100%', labelY);
+        applyLabel(axis.labelMid, labels.mid, 0.5, '50%', labelY);
+        return;
+    }
+
+    if (drawAxisLine) {
+        axis.ticksGroup.appendChild(createSvgLine(base, '0%', base, '100%', axisLineClass));
+    }
+    ticksT.forEach((t) => {
+        const y = toPct(t);
+        if (y == null) return;
+        axis.ticksGroup.appendChild(createSvgLine(base, y, base + tickLenPx * dir, y, tickClass));
+    });
+    const labelX = Math.round(base + tickLenPx * dir + labelPad * dir);
+    applyLabel(axis.labelMin, labels.min, 0, labelX, '0%');
+    applyLabel(axis.labelMax, labels.max, 1, labelX, '100%');
+    applyLabel(axis.labelMid, labels.mid, 0.5, labelX, '50%');
+};
+
+const formatEdgeLabel = ({ value, edge, hasBelow, hasAbove, formatter } = {}) => {
+    const formatFn = typeof formatter === 'function' ? formatter : v => String(v ?? '');
+    const text = formatFn(value);
+    if (edge === 'min' && hasBelow) return `≤ ${text}`;
+    if (edge === 'max' && hasAbove) return `≥ ${text}`;
+    return text;
+};
+
+const formatBinnedRangeLabel = ({ index, count, left, right } = {}) => {
+    if (index === 0) return `≤ ${right}`;
+    if (index === count - 1) return `≥ ${left}`;
+    return `${left} - ${right}`;
+};
+
+const computeLinearTicks = ({ min, max, steps, toT } = {}) => {
+    const count = Math.max(2, Number(steps) || 2);
+    const dmin = Number(min);
+    const dmax = Number(max);
+    if (!Number.isFinite(dmin) || !Number.isFinite(dmax)) {
+        return { ticks: [], ticksT: [] };
+    }
+    const ticks = d3.range(count).map(i => dmin + (i / (count - 1)) * (dmax - dmin));
+    ticks[0] = dmin;
+    ticks[ticks.length - 1] = dmax;
+    const ticksClean = ticks.map(Number).filter(Number.isFinite);
+    const ticksT = typeof toT === 'function'
+        ? ticksClean.map(v => Number(toT(v))).filter(t => Number.isFinite(t) && t >= 0 && t <= 1)
+        : [];
+    return { ticks: ticksClean, ticksT };
+};
+
+const getMidTickLabel = ({ ticks, steps, toT, formatter } = {}) => {
+    if (!Array.isArray(ticks) || !ticks.length) return null;
+    if (ticks.length > 3 || ticks.length !== steps) return null;
+    const midIdx = Math.floor(ticks.length / 2);
+    if (midIdx <= 0 || midIdx >= ticks.length - 1) return null;
+    const tMid = typeof toT === 'function' ? Number(toT(ticks[midIdx])) : NaN;
+    if (!Number.isFinite(tMid) || tMid < 0 || tMid > 1) return null;
+    const formatFn = typeof formatter === 'function' ? formatter : v => String(v ?? '');
+    return { t: tMid, text: formatFn(ticks[midIdx]) };
+};
+
+const getDomainFlags = (stats, domain) => {
+    const rawMin = Array.isArray(domain) ? Number(domain[0]) : Number(domain);
+    const rawMax = Array.isArray(domain) ? Number(domain[domain.length - 1]) : Number(domain);
+    let min = Number.isFinite(rawMin) ? rawMin : Number(stats?.min);
+    let max = Number.isFinite(rawMax) ? rawMax : Number(stats?.max);
+    if (!Number.isFinite(min)) min = Number(stats?.min);
+    if (!Number.isFinite(max)) max = Number(stats?.max);
+    if (min > max) [min, max] = [max, min];
+
+    const eps = (Number.isFinite(stats?.max) && Number.isFinite(stats?.min))
+        ? Math.max(1e-12, (stats.max - stats.min) * 1e-9)
+        : 1e-12;
+    const hasBelow = Number.isFinite(stats?.min) && (stats.min < min - eps);
+    const hasAbove = Number.isFinite(stats?.max) && (stats.max > max + eps);
+
+    return { min, max, hasBelow, hasAbove };
+};
+
+const resolveLegendHeader = (dataState, fallbackTitle = '') => ({
+    title: dataState?.currentMetricLabel || dataState?.currentMetricId || fallbackTitle,
+    description: dataState?.currentMetricDescription || ''
+});
+
+const buildLegendHeader = (dataState, fallbackTitle = '') => {
+    const { title, description } = resolveLegendHeader(dataState, fallbackTitle);
+    const head = document.createElement('div');
+    const titleEl = document.createElement('div');
+    titleEl.className = 'legend-title';
+    titleEl.textContent = title || '';
+    head.appendChild(titleEl);
+
+    if (description) {
+        const descEl = document.createElement('div');
+        descEl.className = 'legend-description';
+        descEl.textContent = description;
+        head.appendChild(descEl);
+    }
+
+    return head;
+};
+
+const buildLegendList = (rows = [], badgeText = '') => {
+    const list = document.createElement('div');
+    list.className = 'legend-categorical';
+
+    rows.forEach(({ color, label }) => {
+        const row = document.createElement('div');
+        row.className = 'legend-row';
+
+        const swatch = document.createElement('span');
+        swatch.className = 'legend-swatch';
+        swatch.style.background = color || '#cccccc';
+
+        const text = document.createElement('span');
+        text.textContent = label || '';
+
+        row.appendChild(swatch);
+        row.appendChild(text);
+        list.appendChild(row);
+    });
+
+    if (badgeText) {
+        const badge = document.createElement('div');
+        badge.className = 'legend-badge';
+        badge.textContent = badgeText;
+        list.appendChild(badge);
+    }
+
+    return list;
+};
+
+const formatScaleLabel = ({ settings, scaleObj, fallback = 'linear' } = {}) => {
+    const scaleName = String(settings?.scale || fallback || 'linear').toLowerCase();
+    if (scaleName === 'pow') {
+        const k = scaleObj?.__exponentRaw ?? scaleObj?.__exponent ?? settings?.exponent ?? 2;
+        return `power scale (k=${k})`;
+    }
+    return `${scaleName} scale`;
+};
+
 
 class MapRenderer {
     constructor(containerId) {
@@ -1826,11 +1976,11 @@ class MapRenderer {
 
         legend.replaceChildren(cache.shell);
 
-        if (cache.titleEl) cache.titleEl.textContent = this.dataState.currentMetricLabel || this.dataState.currentMetricId || 'Metric';
-        const desc = this.dataState.currentMetricDescription || '';
+        const { title, description } = resolveLegendHeader(this.dataState, 'Metric');
+        if (cache.titleEl) cache.titleEl.textContent = title || 'Metric';
         if (cache.descEl) {
-            cache.descEl.textContent = desc;
-            cache.descEl.style.display = desc ? '' : 'none';
+            cache.descEl.textContent = description;
+            cache.descEl.style.display = description ? '' : 'none';
         }
 
         const cssW = 220, cssH = 12;
@@ -1851,49 +2001,52 @@ class MapRenderer {
         const stepCount = Math.max(2, Number(settings?.legendSteps || 6));
 
         const domain = (typeof scale.domain === 'function') ? scale.domain() : [stats.min, stats.max];
-        const dmin = Math.min(Number(domain[0]), Number(domain[domain.length - 1]));
-        const dmax = Math.max(Number(domain[0]), Number(domain[domain.length - 1]));
+        const {
+            min: dmin,
+            max: dmax,
+            hasBelow: hasBelowDomain,
+            hasAbove: hasAboveDomain
+        } = getDomainFlags(stats, domain);
 
-        let ticks = d3.range(stepCount).map(i => dmin + (i / (stepCount - 1)) * (dmax - dmin));
-        ticks[0] = dmin;
-        ticks[ticks.length - 1] = dmax;
-        ticks = ticks.map(Number).filter(Number.isFinite);
-
-        const ticksT = ticks.map(v => scale(v)).filter(t => t >= 0 && t <= 1);
+        const { ticks, ticksT } = computeLinearTicks({
+            min: dmin,
+            max: dmax,
+            steps: stepCount,
+            toT: v => scale(v)
+        });
 
         const axis = cache.axis;
-
-        const eps = (Number.isFinite(stats?.max) && Number.isFinite(stats?.min))
-            ? Math.max(1e-12, (stats.max - stats.min) * 1e-9)
-            : 1e-12;
-        const hasBelowDomain = Number.isFinite(stats?.min) && (stats.min < dmin - eps);
-        const hasAboveDomain = Number.isFinite(stats?.max) && (stats.max > dmax + eps);
 
         const labels = {
             min: {
                 t: 0,
-                text: hasBelowDomain
-                    ? `≤ ${this.formatValue(dmin, settings, stats)}`
-                    : this.formatValue(dmin, settings, stats)
+                text: formatEdgeLabel({
+                    value: dmin,
+                    edge: 'min',
+                    hasBelow: hasBelowDomain,
+                    hasAbove: hasAboveDomain,
+                    formatter: v => this.formatValue(v, settings, stats)
+                })
             },
             max: {
                 t: 1,
-                text: hasAboveDomain
-                    ? `≥ ${this.formatValue(dmax, settings, stats)}`
-                    : this.formatValue(dmax, settings, stats)
+                text: formatEdgeLabel({
+                    value: dmax,
+                    edge: 'max',
+                    hasBelow: hasBelowDomain,
+                    hasAbove: hasAboveDomain,
+                    formatter: v => this.formatValue(v, settings, stats)
+                })
             }
         };
 
-        if (ticks.length <= 3 && ticks.length === stepCount) {
-            const midIdx = Math.floor(ticks.length / 2);
-            if (midIdx > 0 && midIdx < ticks.length - 1) {
-                const tMid = scale(ticks[midIdx]);
-                labels.mid = {
-                    t: tMid,
-                    text: this.formatValue(ticks[midIdx], settings, stats)
-                };
-            }
-        }
+        const midLabel = getMidTickLabel({
+            ticks,
+            steps: stepCount,
+            toT: v => scale(v),
+            formatter: v => this.formatValue(v, settings, stats)
+        });
+        if (midLabel) labels.mid = midLabel;
 
         if (axis) {
             renderSvgAxis({
@@ -1913,90 +2066,46 @@ class MapRenderer {
         }
 
 
-        const scaleName = String(settings?.scale || 'linear').toLowerCase();
-        if (scaleName === 'pow') {
-            const k = normalizeValue.scale.__exponentRaw ?? normalizeValue.scale.__exponent ?? settings.exponent ?? 2;
-            cache.badgeEl.textContent = `power scale (k=${k})`;
-        } else {
-            cache.badgeEl.textContent = scaleName.toLowerCase() + ` scale`;
-        }
+        cache.badgeEl.textContent = formatScaleLabel({
+            settings,
+            scaleObj: normalizeValue?.scale,
+            fallback: 'linear'
+        });
 
         this.refreshLegendChrome();
     }
 
     renderBinnedLegend(container, stats, settings, binner, palette) {
-        const head = document.createElement('div');
-        const title = document.createElement('div');
-        title.className = 'legend-title';
-        title.textContent = this.dataState.currentMetricLabel || this.dataState.currentMetricId || 'Metric';
-        head.appendChild(title);
-
-        const desc = this.dataState.currentMetricDescription || '';
-        if (desc) {
-            const description = document.createElement('div');
-            description.className = 'legend-description';
-            description.textContent = desc;
-            head.appendChild(description);
-        }
-
-        const badge = document.createElement('div');
-        badge.className = 'legend-badge';
-        const scaleName = String(settings?.scale || 'linear').toLowerCase();
-        badge.textContent = `${binner.method} (${binner.bins}) | ${scaleName} scale`;
-        
-
-        const list = document.createElement('div');
-        list.className = 'legend-categorical';
+        const head = buildLegendHeader(this.dataState, 'Metric');
+        const scaleLabel = formatScaleLabel({ settings, fallback: 'linear' });
+        const badgeText = `${binner.method} (${binner.bins}) | ${scaleLabel}`;
 
         const paletteSafe = this.expandPalette(palette || [], binner.bins);
         const edges = Array.isArray(binner.edges) ? binner.edges : null;
         const showEdges = edges && edges.length >= binner.bins + 1;
 
-        const formatEdgeBin = (i) => {
-            const left = this.formatValue(edges[i], settings, stats);
-            const right = this.formatValue(edges[i + 1], settings, stats);
-            if (i === 0) return `≤ ${right}`;
-            if (i === binner.bins - 1) return `≥ ${left}`;
-            return `${left} - ${right}`;
-        };
-
+        const rows = [];
         for (let i = 0; i < binner.bins; i++) {
-            const row = document.createElement('div');
-            row.className = 'legend-row';
-
-            const swatch = document.createElement('span');
-            swatch.className = 'legend-swatch';
-            swatch.style.background = paletteSafe[i] || '#cccccc';
-
-            const label = document.createElement('span');
-            if (showEdges) {
-                label.textContent = formatEdgeBin(i);
-            } else {
-                label.textContent = `Bin ${i + 1}`;
-            }
-
-            row.appendChild(swatch);
-            row.appendChild(label);
-            list.appendChild(row);
+            const labelText = showEdges
+                ? formatBinnedRangeLabel({
+                    index: i,
+                    count: binner.bins,
+                    left: this.formatValue(edges[i], settings, stats),
+                    right: this.formatValue(edges[i + 1], settings, stats)
+                })
+                : `Bin ${i + 1}`;
+            rows.push({
+                color: paletteSafe[i] || '#cccccc',
+                label: labelText
+            });
         }
-        list.appendChild(badge);
+
+        const list = buildLegendList(rows, badgeText);
         container.appendChild(this.wrapLegendForToggle(head, list));
     }
 
     renderCategoricalLegend(container, stats, interpolator, settings) {
-        const head = document.createElement('div');
-        const title = document.createElement('div');
-        title.className = 'legend-title';
-        title.textContent = this.dataState.currentMetricLabel || this.dataState.currentMetricId || 'Categories';
-        head.appendChild(title);
-
-        const desc = this.dataState.currentMetricDescription || '';
-        if (desc) {
-            const description = document.createElement('div');
-            description.className = 'legend-description';
-            description.textContent = desc;
-            head.appendChild(description);
-        }
+        const head = buildLegendHeader(this.dataState, 'Categories');
 
         const categories = stats.categories || [];
         if (!categories.length) {
@@ -2005,9 +2114,6 @@ class MapRenderer {
             container.appendChild(empty);
             return;
         }
-
-        const list = document.createElement('div');
-        list.className = 'legend-categorical';
 
         const colorOf = (value) => {
             try {
@@ -2018,24 +2124,16 @@ class MapRenderer {
             }
         };
 
-        categories.forEach(cat => {
-            const row = document.createElement('div');
-            row.className = 'legend-row';
-
-            const swatch = document.createElement('span');
-            swatch.className = 'legend-swatch';
-            swatch.style.background = colorOf(cat.value) || '#cccccc';
-
-            const label = document.createElement('span');
+        const rows = categories.map(cat => {
             const count = Number.isFinite(cat.count) ? cat.count : null;
             const countText = count != null ? ` (${count.toLocaleString()})` : '';
-            label.textContent = `${this.formatCategoryValue(cat.value)}${countText}`;
-
-            row.appendChild(swatch);
-            row.appendChild(label);
-            list.appendChild(row);
+            return {
+                color: colorOf(cat.value) || '#cccccc',
+                label: `${this.formatCategoryValue(cat.value)}${countText}`
+            };
         });
 
+        const list = buildLegendList(rows);
         container.appendChild(this.wrapLegendForToggle(head, list));
     }
 
@@ -2102,11 +2200,10 @@ class MapRenderer {
             ];
         };
 
-        const svgNS = 'http://www.w3.org/2000/svg';
         const xlinkNS = 'http://www.w3.org/1999/xlink';
         let svgEl = canvasWrap.querySelector('.bivar-svg');
         if (!svgEl) {
-            svgEl = document.createElementNS(svgNS, 'svg');
+            svgEl = document.createElementNS(SVG_NS, 'svg');
             svgEl.classList.add('bivar-svg');
             svgEl.setAttribute('aria-hidden', 'true');
             svgEl.setAttribute('focusable', 'false');
@@ -2115,7 +2212,7 @@ class MapRenderer {
 
         let imageEl = svgEl.querySelector('.bivar-svg-image');
         if (!imageEl) {
-            imageEl = document.createElementNS(svgNS, 'image');
+            imageEl = document.createElementNS(SVG_NS, 'image');
             imageEl.classList.add('bivar-svg-image');
             imageEl.setAttribute('preserveAspectRatio', 'none');
             svgEl.appendChild(imageEl);
@@ -2123,7 +2220,7 @@ class MapRenderer {
 
         let rotGroup = svgEl.querySelector('.bivar-svg-rot');
         if (!rotGroup) {
-            rotGroup = document.createElementNS(svgNS, 'g');
+            rotGroup = document.createElementNS(SVG_NS, 'g');
             rotGroup.classList.add('bivar-svg-rot');
             svgEl.appendChild(rotGroup);
         }
@@ -2131,14 +2228,14 @@ class MapRenderer {
 
         let axisGroup = rotGroup.querySelector('.bivar-svg-axes');
         if (!axisGroup) {
-            axisGroup = document.createElementNS(svgNS, 'g');
+            axisGroup = document.createElementNS(SVG_NS, 'g');
             axisGroup.classList.add('bivar-svg-axes');
             rotGroup.appendChild(axisGroup);
         }
 
         let labelGroup = rotGroup.querySelector('.bivar-svg-labels');
         if (!labelGroup) {
-            labelGroup = document.createElementNS(svgNS, 'g');
+            labelGroup = document.createElementNS(SVG_NS, 'g');
             labelGroup.classList.add('bivar-svg-labels');
             rotGroup.appendChild(labelGroup);
         }
@@ -2156,21 +2253,18 @@ class MapRenderer {
 
         const xDom = (typeof xScale.scale.domain === 'function') ? xScale.scale.domain() : [xStats.min, xStats.max];
         const yDom = (typeof yScale.scale.domain === 'function') ? yScale.scale.domain() : [yStats.min, yStats.max];
-        const xMin = Math.min(Number(xDom[0]), Number(xDom[xDom.length - 1]));
-        const xMax = Math.max(Number(xDom[0]), Number(xDom[xDom.length - 1]));
-        const yMin = Math.min(Number(yDom[0]), Number(yDom[yDom.length - 1]));
-        const yMax = Math.max(Number(yDom[0]), Number(yDom[yDom.length - 1]));
-
-        const xEps = (Number.isFinite(xStats?.max) && Number.isFinite(xStats?.min))
-            ? Math.max(1e-12, (xStats.max - xStats.min) * 1e-9)
-            : 1e-12;
-        const yEps = (Number.isFinite(yStats?.max) && Number.isFinite(yStats?.min))
-            ? Math.max(1e-12, (yStats.max - yStats.min) * 1e-9)
-            : 1e-12;
-        const xHasBelowDomain = Number.isFinite(xStats?.min) && (xStats.min < xMin - xEps);
-        const xHasAboveDomain = Number.isFinite(xStats?.max) && (xStats.max > xMax + xEps);
-        const yHasBelowDomain = Number.isFinite(yStats?.min) && (yStats.min < yMin - yEps);
-        const yHasAboveDomain = Number.isFinite(yStats?.max) && (yStats.max > yMax + yEps);
+        const {
+            min: xMin,
+            max: xMax,
+            hasBelow: xHasBelowDomain,
+            hasAbove: xHasAboveDomain
+        } = getDomainFlags(xStats, xDom);
+        const {
+            min: yMin,
+            max: yMax,
+            hasBelow: yHasBelowDomain,
+            hasAbove: yHasAboveDomain
+        } = getDomainFlags(yStats, yDom);
 
         const invertScale = (scale, t, min, max) => {
             if (scale && typeof scale.invert === 'function') return Number(scale.invert(t));
@@ -2204,12 +2298,17 @@ class MapRenderer {
         if (xAxisEl) xAxisEl.replaceChildren();
         if (yAxisEl) yAxisEl.replaceChildren();
 
-        const formatEdgeLabel = (value, idx, maxIdx, hasBelow, hasAbove, set, stats) => {
-            let text = this.formatValue(value, set, stats);
-            if (idx === 0 && hasBelow) text = `≤ ${text}`;
-            else if (idx === maxIdx && hasAbove) text = `≥ ${text}`;
-            return text;
+        const formatEdge = (value, idx, maxIdx, hasBelow, hasAbove, set, stats) => {
+            const edge = idx == null ? null : (idx === 0 ? 'min' : (idx === maxIdx ? 'max' : null));
+            return formatEdgeLabel({
+                value,
+                edge,
+                hasBelow,
+                hasAbove,
+                formatter: v => this.formatValue(v, set, stats)
+            });
         };
+
 
         const xLabelTicks = [];
         const yLabelTicks = [];
@@ -2220,12 +2319,12 @@ class MapRenderer {
                 : edgeTX.map(t => invertScale(xScale.scale, t, xMin, xMax));
             xEdgeValues.forEach((value, i) => {
                 const t = edgeTX[i];
-                const label = formatEdgeLabel(value, i, xEdgeValues.length - 1, xHasBelowDomain, xHasAboveDomain, xSet, xStats);
+                const label = formatEdge(value, i, xEdgeValues.length - 1, xHasBelowDomain, xHasAboveDomain, xSet, xStats);
                 xLabelTicks.push({ t, label });
             });
         } else {
-            const minLabel = formatEdgeLabel(xMin, 0, 1, xHasBelowDomain, xHasAboveDomain, xSet, xStats);
-            const maxLabel = formatEdgeLabel(xMax, 1, 1, xHasBelowDomain, xHasAboveDomain, xSet, xStats);
+            const minLabel = formatEdge(xMin, 0, 1, xHasBelowDomain, xHasAboveDomain, xSet, xStats);
+            const maxLabel = formatEdge(xMax, 1, 1, xHasBelowDomain, xHasAboveDomain, xSet, xStats);
             xLabelTicks.push({ t: 0, label: minLabel });
             xLabelTicks.push({ t: 1, label: maxLabel });
         }
@@ -2236,12 +2335,12 @@ class MapRenderer {
                 : edgeTY.map(t => invertScale(yScale.scale, t, yMin, yMax));
             yEdgeValues.forEach((value, i) => {
                 const t = edgeTY[i];
-                const label = formatEdgeLabel(value, i, yEdgeValues.length - 1, yHasBelowDomain, yHasAboveDomain, ySet, yStats);
+                const label = formatEdge(value, i, yEdgeValues.length - 1, yHasBelowDomain, yHasAboveDomain, ySet, yStats);
                 yLabelTicks.push({ t, label });
             });
         } else {
-            const minLabel = formatEdgeLabel(yMin, 0, 1, yHasBelowDomain, yHasAboveDomain, ySet, yStats);
-            const maxLabel = formatEdgeLabel(yMax, 1, 1, yHasBelowDomain, yHasAboveDomain, ySet, yStats);
+            const minLabel = formatEdge(yMin, 0, 1, yHasBelowDomain, yHasAboveDomain, ySet, yStats);
+            const maxLabel = formatEdge(yMax, 1, 1, yHasBelowDomain, yHasAboveDomain, ySet, yStats);
             yLabelTicks.push({ t: 0, label: minLabel });
             yLabelTicks.push({ t: 1, label: maxLabel });
         }
@@ -2253,14 +2352,13 @@ class MapRenderer {
             .map(Number)
             .filter(Number.isFinite);
 
-        const xScaleName = String(xSet?.scale || 'linear').toLowerCase();
-        const xK = xScale.scale.__exponentRaw ?? xSet?.exponent;
+        const xBadge = formatScaleLabel({
+            settings: xSet,
+            scaleObj: xScale?.scale,
+            fallback: 'linear'
+        });
 
-        const xBadge = xScaleName === 'pow'
-            ? `power scale (k=${xK ?? xScale.scale.__exponent ?? 2})`
-            : `${xScaleName} scale`;
-
-        infoX.textContent = isBinned ? `${xBadge} | ${binsX}x${binsY} bins` : `${xBadge}`;
+        infoX.textContent = isBinned ? `${xBadge} | ${binsX}x${binsY} bins` : xBadge;
         legend.replaceChildren(this.wrapLegendForToggle(headEl, bodyEl));
 
         const readCssPx = (el) => {
@@ -2279,7 +2377,7 @@ class MapRenderer {
         };
 
         const makeSvgEl = (tag, attrs, className) => {
-            const el = document.createElementNS(svgNS, tag);
+            const el = document.createElementNS(SVG_NS, tag);
             if (className) el.setAttribute('class', className);
             if (attrs) setSvgAttrs(el, attrs);
             return el;
@@ -2686,8 +2784,8 @@ class MapRenderer {
 
     formatValue(v, settings = null, stats = null) {
         if (v == null) return 'N/A';
-        if (v === Infinity) return '∞';
-        if (v === -Infinity) return '-∞';
+        if (v === Infinity) return 'Γê₧';
+        if (v === -Infinity) return '-Γê₧';
         if (!Number.isFinite(v)) return 'N/A';
 
         const format = settings?.format || null;
@@ -3484,19 +3582,10 @@ class RangeFilterControlElement extends HTMLElement {
             ? this.scaleObj.domain()
             : [stats.min, stats.max];
 
-        let dmin = Number(rawDomain?.[0]);
-        let dmax = Number(rawDomain?.[rawDomain.length - 1]);
-        if (!Number.isFinite(dmin)) dmin = stats.min;
-        if (!Number.isFinite(dmax)) dmax = stats.max;
-        if (dmin > dmax) [dmin, dmax] = [dmax, dmin];
-
+        const { min: dmin, max: dmax, hasBelow, hasAbove } = getDomainFlags(stats, rawDomain);
         this.domain = { min: dmin, max: dmax };
-
-        const eps = (Number.isFinite(stats?.max) && Number.isFinite(stats?.min))
-            ? Math.max(1e-12, (stats.max - stats.min) * 1e-9)
-            : 1e-12;
-        this.hasBelowDomain = Number.isFinite(stats?.min) && (stats.min < dmin - eps);
-        this.hasAboveDomain = Number.isFinite(stats?.max) && (stats.max > dmax + eps);
+        this.hasBelowDomain = hasBelow;
+        this.hasAboveDomain = hasAbove;
 
         this.currentRange = currentRange || { min: dmin, max: dmax };
 
@@ -3594,17 +3683,29 @@ class RangeFilterControlElement extends HTMLElement {
         const vMax = this.#vOf(hi);
 
         if (this.dom.valDisplay) {
-            const left = (lo <= 0 && this.hasBelowDomain)
-                ? `≤ ${this.formatValue(this.domain.min)}`
-                : this.formatValue(vMin);
+            const leftValue = (lo <= 0) ? this.domain.min : vMin;
+            const rightValue = (hi >= 1) ? this.domain.max : vMax;
 
-            const right = (hi >= 1 && this.hasAboveDomain)
-                ? `≥ ${this.formatValue(this.domain.max)}`
-                : this.formatValue(vMax);
+            const left = formatEdgeLabel({
+                value: leftValue,
+                edge: lo <= 0 ? 'min' : null,
+                hasBelow: this.hasBelowDomain,
+                hasAbove: this.hasAboveDomain,
+                formatter: v => this.formatValue(v)
+            });
+
+            const right = formatEdgeLabel({
+                value: rightValue,
+                edge: hi >= 1 ? 'max' : null,
+                hasBelow: this.hasBelowDomain,
+                hasAbove: this.hasAboveDomain,
+                formatter: v => this.formatValue(v)
+            });
 
             this.dom.valDisplay.textContent = `${left} to ${right}`;
         }
     }
+
     #renderAxis(dmin, dmax) {
 
         const axis = this.dom.axis;
@@ -3628,28 +3729,33 @@ class RangeFilterControlElement extends HTMLElement {
         if (!axisPack) return;
 
         const majorCount = Math.max(2, Number(this.settings?.legendSteps || 6));
-        let ticks = d3.range(majorCount).map(i => dmin + (i / (majorCount - 1)) * (dmax - dmin));
-        ticks[0] = dmin;
-        ticks[ticks.length - 1] = dmax;
-        ticks = ticks.map(Number).filter(Number.isFinite);
-
-        const ticksT = ticks.map(v => this.#tOf(v)).filter(t => t >= 0 && t <= 1);
-
-        // labels (endpoints only) in SVG
-        const eps = (Number.isFinite(this.stats?.max) && Number.isFinite(this.stats?.min))
-            ? Math.max(1e-12, (this.stats.max - this.stats.min) * 1e-9)
-            : 1e-12;
-        const hasBelowDomain = Number.isFinite(this.stats?.min) && (this.stats.min < dmin - eps);
-        const hasAboveDomain = Number.isFinite(this.stats?.max) && (this.stats.max > dmax + eps);
+        const { ticksT } = computeLinearTicks({
+            min: dmin,
+            max: dmax,
+            steps: majorCount,
+            toT: v => this.#tOf(v)
+        });
 
         const labels = {
             min: {
                 t: 0,
-                text: hasBelowDomain ? `≤ ${this.formatValue(dmin)}` : this.formatValue(dmin)
+                text: formatEdgeLabel({
+                    value: dmin,
+                    edge: 'min',
+                    hasBelow: this.hasBelowDomain,
+                    hasAbove: this.hasAboveDomain,
+                    formatter: v => this.formatValue(v)
+                })
             },
             max: {
                 t: 1,
-                text: hasAboveDomain ? `≥ ${this.formatValue(dmax)}` : this.formatValue(dmax)
+                text: formatEdgeLabel({
+                    value: dmax,
+                    edge: 'max',
+                    hasBelow: this.hasBelowDomain,
+                    hasAbove: this.hasAboveDomain,
+                    formatter: v => this.formatValue(v)
+                })
             }
         };
 
