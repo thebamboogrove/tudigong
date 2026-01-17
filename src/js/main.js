@@ -2844,17 +2844,8 @@ class MapRenderer {
             return nf;
         };
 
-        const resolvePercentScale = () => {
-            const explicit = String(settings?.percentageScale || '').toLowerCase();
-            if (explicit === 'fraction' || explicit === 'percent') return explicit;
-            const domain = Array.isArray(settings?.domain) && settings.domain.length ? settings.domain : null;
-            const max = Number(domain?.[domain?.length - 1] ?? stats?.max);
-            if (Number.isFinite(max) && max > 1.5) return 'percent';
-            return 'fraction';
-        };
-
         if (settings?.percentage === true) {
-            const scale = resolvePercentScale();
+            const scale = this.resolvePercentScale(settings, stats);
             const normalized = scale === 'percent' ? (v / 100) : v;
             const maximumFractionDigits = Number.isInteger(format?.maximumFractionDigits) ? format.maximumFractionDigits : 2;
             const minimumFractionDigits = Number.isInteger(format?.minimumFractionDigits) ? format.minimumFractionDigits : 0;
@@ -2893,14 +2884,18 @@ class MapRenderer {
         return v.toLocaleString(undefined, { maximumFractionDigits: 1 });
     }
 
-    getDisplayTransform(settings = {}, stats) {
-        if (settings?.percentage !== true) return { toDisplay: v => v, fromDisplay: v => v };
+    resolvePercentScale(settings = null, stats = null) {
+        const explicit = String(settings?.percentageScale || '').toLowerCase();
+        if (explicit === 'fraction' || explicit === 'percent') return explicit;
         const domain = Array.isArray(settings?.domain) && settings.domain.length ? settings.domain : null;
         const max = Number(domain?.[domain?.length - 1] ?? stats?.max);
-        const explicit = String(settings?.percentageScale || '').toLowerCase();
-        const scale = (explicit === 'percent' || explicit === 'fraction')
-            ? explicit
-            : (Number.isFinite(max) && max > 1.5 ? 'percent' : 'fraction');
+        if (Number.isFinite(max) && max > 1.5) return 'percent';
+        return 'fraction';
+    }
+
+    getDisplayTransform(settings = {}, stats) {
+        if (settings?.percentage !== true) return { toDisplay: v => v, fromDisplay: v => v };
+        const scale = this.resolvePercentScale(settings, stats);
         if (scale === 'percent') return { toDisplay: v => v, fromDisplay: v => v };
         return { toDisplay: v => Number(v) * 100, fromDisplay: v => Number(v) / 100 };
     }
