@@ -5,6 +5,8 @@ import { GeoJsonLayer, PathLayer } from '@deck.gl/layers';
 import { PathStyleExtension } from '@deck.gl/extensions';
 import { feature as topojsonFeature, mesh as topojsonMesh } from 'topojson-client';
 
+const sanitizeText = (value) => String(value ?? '').replace(/[\uFEFF\u200B\u202F\u00A0\u2000-\u200A\u2028\u2029]/g, '').trim();
+
 class BoundaryManager {
     constructor() {
         Object.assign(this, this.#initState());
@@ -44,7 +46,7 @@ class BoundaryManager {
         this.countyMeshGeom = topojsonMesh(topology, topology.objects[countyKey], (a, b) => a !== b);
         this.provinceMeshGeom = topojsonMesh(topology, topology.objects[provinceKey], (a, b) => a !== b);
 
-        const cleanKey = k => String(k || '').replace(/[\uFEFF\u200B\u202F\u00A0\u2000-\u200A\u2028\u2029]/g, '').trim();
+        const cleanKey = k => sanitizeText(k);
 
         const sanitizeProps = (props) => {
             if (!props || typeof props !== 'object') return {};
@@ -60,10 +62,7 @@ class BoundaryManager {
         this.features.forEach((feature, index) => {
             feature.properties = sanitizeProps(feature.properties || {});
             const props = feature.properties;
-            const normalizeId = v => {
-                if (v == null) return '';
-                return String(v).replace(/[\uFEFF\u200B\u202F\u00A0\u2000-\u200A\u2028\u2029]/g, '').trim();
-            };
+            const normalizeId = v => sanitizeText(v);
             const id = normalizeId(props.CODE ?? props.code ?? `feature_${index}`);
             feature.id = id || `feature_${index}`;
             this.featureIndex.set(feature.id, feature);
@@ -391,10 +390,7 @@ class DataManager {
     }
 
     normalizeId(value) {
-        if (value == null) return '';
-        return String(value)
-            .replace(/[\uFEFF\u200B\u202F\u00A0\u2000-\u200A\u2028\u2029]/g, '')
-            .trim();
+        return sanitizeText(value);
     }
 
     getFeatureValue(data, featureId, property) {
@@ -418,13 +414,7 @@ class DataManager {
         if (!data || !data.idIndex || !feature) return null;
 
         const props = feature.properties || {};
-        const normalizeId = (v) => {
-            if (v == null) return '';
-            return String(v)
-                .replace(/[\uFEFF\u200B\u202F\u00A0\u2000-\u200A\u2028\u2029]/g, '')
-                .trim();
-        };
-        const id = normalizeId(props.CODE ?? props.code ?? feature.id);
+        const id = this.normalizeId(props.CODE ?? props.code ?? feature.id);
         const idx = data.idIndex.get(id);
         if (idx !== undefined) {
             if (property && property.startsWith('COMPOSITE__')) {
