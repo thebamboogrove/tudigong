@@ -853,6 +853,7 @@ class MapRenderer {
         this.layerState = this.#initLayerState();
         this.hoverState = this.#initHoverState();
         this.viewState = this.#initViewState();
+        this.inputState = this.#initInputState();
 
         this.#setupTooltipElement();
     }
@@ -892,7 +893,9 @@ class MapRenderer {
             changeDelay: 60,
             changeTimer: 0,
             pendingChange: null,
-            pendingKey: ''
+            pendingKey: '',
+            suppressUntil: 0,
+            suppressKey: ''
         };
     }
 
@@ -939,6 +942,14 @@ class MapRenderer {
         return {
             currentZoom: null,
             borderWidthCache: null
+        };
+    }
+
+    #initInputState() {
+        return {
+            mode: this.isTouchInput() ? 'touch' : 'mouse',
+            lastSwitch: 0,
+            cleanup: null
         };
     }
 
@@ -1237,8 +1248,9 @@ class MapRenderer {
                 this.updateBorderWidths(viewState?.zoom);
             },
             onHover: this.onHover.bind(this),
-            onClick: info => console.log('Clicked:', info.object)
+            onClick: this.onClick.bind(this)
         });
+        this.setupInputModeListeners(container);
     }
 
 
@@ -2580,39 +2592,163 @@ class MapRenderer {
     }
 
     onHover(info) {
+        if (this.inputState.mode === 'touch') {
+            return;
+        }
         if (!info.object || !this.dataState.currentData) {
-            this.tooltipState.el.style.display = 'none';
-            this.tooltipState.el.style.visibility = 'hidden';
-            if (this.tooltipState.raf) {
-                cancelAnimationFrame(this.tooltipState.raf);
-                this.tooltipState.raf = 0;
-            }
-            this.tooltipState.nextPos = null;
-            if (this.tooltipState.showTimer) {
-                clearTimeout(this.tooltipState.showTimer);
-                this.tooltipState.showTimer = 0;
-            }
-            this.tooltipState.pending = null;
-            if (this.tooltipState.changeTimer) {
-                clearTimeout(this.tooltipState.changeTimer);
-                this.tooltipState.changeTimer = 0;
-            }
-            this.tooltipState.pendingChange = null;
-            this.tooltipState.pendingKey = '';
-            this.tooltipState.visible = false;
-            this.tooltipState.contentKey = '';
-            this.tooltipState.el.style.opacity = '';
+            this.hideTooltip();
             this.setHoveredFeature(null);
             return;
         }
 
         const feature = info.object;
-        this.setHoveredFeature(feature);
+        const { clone, contentKey } = this.buildTooltipPayload(feature);
+        if (this.tooltipState.suppressKey === contentKey && performance.now() < this.tooltipState.suppressUntil) {
+            return;
+        }
 
+        this.setHoveredFeature(feature);
+        if (this.tooltipState.visible || this.tooltipState.showDelay <= 0) {
+            this.showTooltipNow(info, clone, contentKey);
+            return;
+        }
+
+        if (this.tooltipState.changeTimer) {
+            clearTimeout(this.tooltipState.changeTimer);
+            this.tooltipState.changeTimer = 0;
+        }
+        this.tooltipState.pendingChange = null;
+        this.tooltipState.pending = { info, clone, contentKey };
+        if (!this.tooltipState.showTimer) {
+            this.tooltipState.showTimer = setTimeout(() => {
+                this.tooltipState.showTimer = 0;
+                const pending = this.tooltipState.pending;
+                this.tooltipState.pending = null;
+                if (!pending) return;
+                this.showTooltipNow(pending.info, pending.clone, pending.contentKey);
+            }, this.tooltipState.showDelay);
+        }
+
+    }
+
+    onClick(info) {
+        if (this.inputState.mode !== 'touch' && !this.isTouchInput(info?.srcEvent)) {
+            return;
+        }
+        if (!info?.object || !this.dataState.currentData) {
+            this.hideTooltip();
+            this.setHoveredFeature(null);
+            return;
+        }
+
+        const feature = info.object;
+        const { clone, contentKey } = this.buildTooltipPayload(feature);
+        const isSameFeature = this.tooltipState.visible && this.tooltipState.contentKey === contentKey;
+
+        if (isSameFeature) {
+            this.tooltipState.suppressKey = contentKey;
+            this.tooltipState.suppressUntil = performance.now() + 350;
+            this.hideTooltip();
+            this.setHoveredFeature(null);
+            return;
+        }
+
+        if (this.tooltipState.showTimer) {
+            clearTimeout(this.tooltipState.showTimer);
+            this.tooltipState.showTimer = 0;
+        }
+        if (this.tooltipState.changeTimer) {
+            clearTimeout(this.tooltipState.changeTimer);
+            this.tooltipState.changeTimer = 0;
+        }
+        this.tooltipState.pending = null;
+        this.tooltipState.pendingChange = null;
+        this.tooltipState.pendingKey = '';
+
+        this.setHoveredFeature(feature);
+        this.showTooltipNow(info, clone, contentKey);
+    }
+
+    // is there some more clever way to do this?
+
+    setupInputModeListeners(container) {
+        if (!container) return;
+        const setMode = (mode) => {
+            if (this.inputState.mode === mode) return;
+            this.inputState.mode = mode;
+            this.inputState.lastSwitch = performance.now();
+        };
+        const onPointerDown = (event) => {
+            if (event?.pointerType === 'touch' || event?.pointerType === 'pen') {
+                setMode('touch');
+                return;
+            }
+            if (event?.pointerType === 'mouse') {
+                setMode('mouse');
+            }
+        };
+        const onTouchStart = () => setMode('touch');
+        const onMouseDown = () => setMode('mouse');
+
+        container.addEventListener('pointerdown', onPointerDown, { passive: true });
+        container.addEventListener('touchstart', onTouchStart, { passive: true });
+        container.addEventListener('mousedown', onMouseDown, { passive: true });
+
+        this.inputState.cleanup = () => {
+            container.removeEventListener('pointerdown', onPointerDown);
+            container.removeEventListener('touchstart', onTouchStart);
+            container.removeEventListener('mousedown', onMouseDown);
+        };
+    }
+
+    isTouchInput(srcEvent = null) {
+        if (typeof window === 'undefined') return false;
+        if (srcEvent) {
+            const type = String(srcEvent.type || '');
+            if (type.startsWith('touch')) return true;
+            if (srcEvent.pointerType === 'touch') return true;
+        }
+        const supportsMatch = typeof window.matchMedia === 'function';
+        const coarse = supportsMatch && (
+            window.matchMedia('(pointer: coarse)').matches
+            || window.matchMedia('(any-pointer: coarse)').matches
+        );
+        const noHover = supportsMatch && window.matchMedia('(hover: none)').matches;
+        const touchPoints = navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
+        const touchEvent = 'ontouchstart' in window;
+        return Boolean(coarse || noHover || touchPoints || touchEvent);
+    }
+
+    hideTooltip() {
+        if (!this.tooltipState.el) return;
+        this.tooltipState.el.style.display = 'none';
+        this.tooltipState.el.style.visibility = 'hidden';
+        if (this.tooltipState.raf) {
+            cancelAnimationFrame(this.tooltipState.raf);
+            this.tooltipState.raf = 0;
+        }
+        this.tooltipState.nextPos = null;
+        if (this.tooltipState.showTimer) {
+            clearTimeout(this.tooltipState.showTimer);
+            this.tooltipState.showTimer = 0;
+        }
+        this.tooltipState.pending = null;
+        if (this.tooltipState.changeTimer) {
+            clearTimeout(this.tooltipState.changeTimer);
+            this.tooltipState.changeTimer = 0;
+        }
+        this.tooltipState.pendingChange = null;
+        this.tooltipState.pendingKey = '';
+        this.tooltipState.visible = false;
+        this.tooltipState.contentKey = '';
+        this.tooltipState.el.style.opacity = '';
+    }
+
+    buildTooltipPayload(feature) {
         const tpl = document.getElementById('tooltip-template');
         const clone = tpl.content.cloneNode(true);
         const props = feature.properties || {};
-        const featureId = app.dataManager.normalizeId(props.CODE ?? props.code ?? feature.id);
+        const featureId = this.getFeatureIdFromFeature(feature);
         const nameFromFile = app.dataManager.getFeatureNameByFeature(this.dataState.currentData, feature);
         const nameFromProps = props.NAME || props.name || '';
         const fallbackTitle = nameFromProps || featureId || feature.id;
@@ -2640,27 +2776,7 @@ class MapRenderer {
         }
 
         const contentKey = this.getTooltipContentKey(featureId);
-        if (this.tooltipState.visible || this.tooltipState.showDelay <= 0) {
-            this.showTooltipNow(info, clone, contentKey);
-            return;
-        }
-
-        if (this.tooltipState.changeTimer) {
-            clearTimeout(this.tooltipState.changeTimer);
-            this.tooltipState.changeTimer = 0;
-        }
-        this.tooltipState.pendingChange = null;
-        this.tooltipState.pending = { info, clone, contentKey };
-        if (!this.tooltipState.showTimer) {
-            this.tooltipState.showTimer = setTimeout(() => {
-                this.tooltipState.showTimer = 0;
-                const pending = this.tooltipState.pending;
-                this.tooltipState.pending = null;
-                if (!pending) return;
-                this.showTooltipNow(pending.info, pending.clone, pending.contentKey);
-            }, this.tooltipState.showDelay);
-        }
-
+        return { clone, contentKey };
     }
 
     showTooltipNow(info, clone, contentKey) {
