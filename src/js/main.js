@@ -2822,8 +2822,8 @@ class MapRenderer {
 
     formatValue(v, settings = null, stats = null) {
         if (v == null) return 'N/A';
-        if (v === Infinity) return 'Γê₧';
-        if (v === -Infinity) return '-Γê₧';
+        if (v === Infinity) return '∞';
+        if (v === -Infinity) return '-∞';
         if (!Number.isFinite(v)) return 'N/A';
 
         const format = settings?.format || null;
