@@ -1161,58 +1161,6 @@ class MapRenderer {
     }
 
 
-    draw1DAxisCanvas({ ctx, crisp, cssW, cssH, ticksT, tickLen = 6, baseline = true }) {
-        ctx.clearRect(0, 0, cssW, cssH);
-
-        const y0 = crisp(2);
-
-        if (baseline) {
-            ctx.strokeStyle = 'rgba(0,0,0,0.35)';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(0, y0);
-            ctx.lineTo(cssW, y0);
-            ctx.stroke();
-        }
-
-        ctx.strokeStyle = 'rgba(0,0,0,0.75)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        for (const t of ticksT) {
-            if (!(t >= 0 && t <= 1)) continue;
-            const x = crisp(t * (cssW - 1));
-            ctx.moveTo(x, y0);
-            ctx.lineTo(x, y0 + tickLen);
-        }
-        ctx.stroke();
-    }
-
-    drawYAxisCanvas({ ctx, crisp, cssW, cssH, ticksT, tickLen = 6, baseline = true }) {
-        ctx.clearRect(0, 0, cssW, cssH);
-
-        const x0 = crisp(cssW - 2);
-
-        if (baseline) {
-            ctx.strokeStyle = 'rgba(0,0,0,0.35)';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(x0, 0);
-            ctx.lineTo(x0, cssH);
-            ctx.stroke();
-        }
-
-        ctx.strokeStyle = 'rgba(0,0,0,0.75)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        for (const t of ticksT) {
-            if (!(t >= 0 && t <= 1)) continue;
-            const y = crisp((1 - t) * (cssH - 1));
-            ctx.moveTo(x0, y);
-            ctx.lineTo(x0 - tickLen, y);
-        }
-        ctx.stroke();
-    }
-
     initialize(options = {}) {
         this.initLegendChrome();
         const container = document.getElementById(this.containerId);
@@ -1243,17 +1191,6 @@ class MapRenderer {
         this.setupInputModeListeners(container);
     }
 
-
-    parseNumberLike(v, fallback = NaN) {
-        if (typeof v === 'number') return Number.isFinite(v) ? v : fallback;
-        if (typeof v === 'string') {
-            const s = v.trim();
-            if (/^-?\d+(\.\d+)?$/.test(s)) return parseFloat(s);
-            const m = s.match(/^\s*(-?\d+(?:\.\d+)?)\s*\/\s*(-?\d+(?:\.\d+)?)\s*$/);
-            if (m && parseFloat(m[2]) !== 0) return parseFloat(m[1]) / parseFloat(m[2]);
-        }
-        return fallback;
-    }
 
     buildInterpolator(settings = {}, stats) {
         const interpolation = settings.interpolation || settings || {};
