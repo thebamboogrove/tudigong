@@ -2071,6 +2071,61 @@ class MapRenderer {
         container.appendChild(this.wrapLegendForToggle(head, list));
     }
 
+    buildBivarAxisInfo({ isBinned, bins, steps, binner, normalize, min, max, hasBelow, hasAbove, settings, stats }) {
+        const scaleObj = normalize?.scale;
+        const formatEdge = (value, idx, maxIdx) => {
+            const edge = idx == null ? null : (idx === 0 ? 'min' : (idx === maxIdx ? 'max' : null));
+            return formatEdgeLabel({
+                value,
+                edge,
+                hasBelow,
+                hasAbove,
+                formatter: v => this.formatValue(v, settings, stats)
+            });
+        };
+
+        const edgeT = isBinned ? d3.range(bins + 1).map(i => i / bins) : [];
+        let ticks = [];
+
+        if (isBinned) {
+            ticks = edgeT.slice();
+        } else {
+            if (scaleObj && typeof scaleObj.invert === 'function') {
+                ticks = d3.range(steps).map(i => Number(scaleObj.invert(i / (steps - 1))));
+            } else {
+                ticks = d3.range(steps).map(i => min + (i / (steps - 1)) * (max - min));
+            }
+            ticks[0] = min;
+            ticks[ticks.length - 1] = max;
+            ticks = ticks.map(Number).filter(Number.isFinite);
+        }
+
+        const labelTicks = [];
+        if (isBinned) {
+            const invertT = (t) => {
+                if (scaleObj && typeof scaleObj.invert === 'function') return Number(scaleObj.invert(t));
+                return min + t * (max - min);
+            };
+            const edgeValues = (binner?.edges && binner.edges.length === bins + 1)
+                ? binner.edges
+                : edgeT.map(invertT);
+            edgeValues.forEach((value, i) => {
+                const t = edgeT[i];
+                const label = formatEdge(value, i, edgeValues.length - 1);
+                labelTicks.push({ t, label });
+            });
+        } else {
+            labelTicks.push({ t: 0, label: formatEdge(min, 0, 1) });
+            labelTicks.push({ t: 1, label: formatEdge(max, 1, 1) });
+        }
+
+        const ticksT = (isBinned ? ticks : ticks.map(v => (scaleObj ? scaleObj(v) : v)))
+            .map(Number)
+            .filter(Number.isFinite);
+
+        return { ticksT, labelTicks };
+    }
+
     updateBivariateLegend(bivar, xStats, yStats, xScale, yScale, interpX, interpY, xSet, ySet, blendMode = 'additive', xBinner = null, yBinner = null, paletteInfo = null) {
 
         this.legendState.cleanup?.();
@@ -2200,91 +2255,41 @@ class MapRenderer {
             hasAbove: yHasAboveDomain
         } = getDomainFlags(yStats, yDom);
 
-        const invertScale = (scale, t, min, max) => {
-            if (scale && typeof scale.invert === 'function') return Number(scale.invert(t));
-            return min + t * (max - min);
-        };
+        const xAxisInfo = this.buildBivarAxisInfo({
+            isBinned,
+            bins: binsX,
+            steps: stepsX,
+            binner: xBinner,
+            normalize: xScale,
+            min: xMin,
+            max: xMax,
+            hasBelow: xHasBelowDomain,
+            hasAbove: xHasAboveDomain,
+            settings: xSet,
+            stats: xStats
+        });
 
-        let ticksX = [];
-        let ticksY = [];
-        let edgeTX = [];
-        let edgeTY = [];
-
-        if (isBinned) {
-            edgeTX = d3.range(binsX + 1).map(i => i / binsX);
-            edgeTY = d3.range(binsY + 1).map(i => i / binsY);
-            ticksX = edgeTX.slice();
-            ticksY = edgeTY.slice();
-        } else {
-            if (typeof xScale.scale.invert === 'function') ticksX = d3.range(stepsX).map(i => Number(xScale.scale.invert(i / (stepsX - 1))));
-            else ticksX = d3.range(stepsX).map(i => xMin + (i / (stepsX - 1)) * (xMax - xMin));
-            ticksX[0] = xMin;
-            ticksX[ticksX.length - 1] = xMax;
-            ticksX = ticksX.map(Number).filter(Number.isFinite);
-
-            if (typeof yScale.scale.invert === 'function') ticksY = d3.range(stepsY).map(i => Number(yScale.scale.invert(i / (stepsY - 1))));
-            else ticksY = d3.range(stepsY).map(i => yMin + (i / (stepsY - 1)) * (yMax - yMin));
-            ticksY[0] = yMin;
-            ticksY[ticksY.length - 1] = yMax;
-            ticksY = ticksY.map(Number).filter(Number.isFinite);
-        }
+        const yAxisInfo = this.buildBivarAxisInfo({
+            isBinned,
+            bins: binsY,
+            steps: stepsY,
+            binner: yBinner,
+            normalize: yScale,
+            min: yMin,
+            max: yMax,
+            hasBelow: yHasBelowDomain,
+            hasAbove: yHasAboveDomain,
+            settings: ySet,
+            stats: yStats
+        });
 
         if (xAxisEl) xAxisEl.replaceChildren();
         if (yAxisEl) yAxisEl.replaceChildren();
 
-        const formatEdge = (value, idx, maxIdx, hasBelow, hasAbove, set, stats) => {
-            const edge = idx == null ? null : (idx === 0 ? 'min' : (idx === maxIdx ? 'max' : null));
-            return formatEdgeLabel({
-                value,
-                edge,
-                hasBelow,
-                hasAbove,
-                formatter: v => this.formatValue(v, set, stats)
-            });
-        };
-
-
-        const xLabelTicks = [];
-        const yLabelTicks = [];
-
-        if (isBinned) {
-            const xEdgeValues = (xBinner?.edges && xBinner.edges.length === binsX + 1)
-                ? xBinner.edges
-                : edgeTX.map(t => invertScale(xScale.scale, t, xMin, xMax));
-            xEdgeValues.forEach((value, i) => {
-                const t = edgeTX[i];
-                const label = formatEdge(value, i, xEdgeValues.length - 1, xHasBelowDomain, xHasAboveDomain, xSet, xStats);
-                xLabelTicks.push({ t, label });
-            });
-        } else {
-            const minLabel = formatEdge(xMin, 0, 1, xHasBelowDomain, xHasAboveDomain, xSet, xStats);
-            const maxLabel = formatEdge(xMax, 1, 1, xHasBelowDomain, xHasAboveDomain, xSet, xStats);
-            xLabelTicks.push({ t: 0, label: minLabel });
-            xLabelTicks.push({ t: 1, label: maxLabel });
-        }
-
-        if (isBinned) {
-            const yEdgeValues = (yBinner?.edges && yBinner.edges.length === binsY + 1)
-                ? yBinner.edges
-                : edgeTY.map(t => invertScale(yScale.scale, t, yMin, yMax));
-            yEdgeValues.forEach((value, i) => {
-                const t = edgeTY[i];
-                const label = formatEdge(value, i, yEdgeValues.length - 1, yHasBelowDomain, yHasAboveDomain, ySet, yStats);
-                yLabelTicks.push({ t, label });
-            });
-        } else {
-            const minLabel = formatEdge(yMin, 0, 1, yHasBelowDomain, yHasAboveDomain, ySet, yStats);
-            const maxLabel = formatEdge(yMax, 1, 1, yHasBelowDomain, yHasAboveDomain, ySet, yStats);
-            yLabelTicks.push({ t: 0, label: minLabel });
-            yLabelTicks.push({ t: 1, label: maxLabel });
-        }
-
-        const ticksTX = (isBinned ? ticksX : ticksX.map(v => xScale.scale(v)))
-            .map(Number)
-            .filter(Number.isFinite);
-        const ticksTY = (isBinned ? ticksY : ticksY.map(v => yScale.scale(v)))
-            .map(Number)
-            .filter(Number.isFinite);
+        const ticksTX = xAxisInfo.ticksT;
+        const ticksTY = yAxisInfo.ticksT;
+        const xLabelTicks = xAxisInfo.labelTicks;
+        const yLabelTicks = yAxisInfo.labelTicks;
 
         const xBadge = formatScaleLabel({
             settings: xSet,
