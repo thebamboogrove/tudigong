@@ -3463,7 +3463,6 @@ class ChoroplethApp {
         if (!tpl) return;
 
         const fragment = tpl.content.cloneNode(true);
-        const panel = fragment.querySelector('.composite-controls');
         const title = fragment.querySelector('.composite-controls-title');
         const actions = fragment.querySelector('.composite-controls-actions');
         const grid = fragment.querySelector('.composite-controls-grid');
@@ -3505,11 +3504,7 @@ class ChoroplethApp {
             grid?.appendChild(row);
         });
 
-        if (panel) {
-            container.replaceChildren(fragment);
-        } else {
-            container.replaceChildren(fragment);
-        }
+        container.replaceChildren(fragment);
     }
 
     async updateCompositeSelection(partsOverride) {
