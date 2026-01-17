@@ -1863,12 +1863,11 @@ class MapRenderer {
 
     refreshLayers() {
         this.ensureStaticLayers();
-        const highlightLayers = this.buildHighlightLayers();
         const layers = [
             ...this.layerState.base,
             ...(this.layerState.main || []),
             ...this.layerState.border,
-            ...(highlightLayers ? [highlightLayers] : [])
+            ...(this.buildHighlightLayers() || [])
         ];
         this.deckgl.setProps({ layers });
     }
