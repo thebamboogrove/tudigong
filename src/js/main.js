@@ -19,7 +19,6 @@ class BoundaryManager {
             featureIndex: new Map(),
             bounds: null,
             countryFeatures: null,
-            provinceMeshFeature: null,
             extraPaths: null,
             tendashPaths: null
         };
@@ -39,9 +38,6 @@ class BoundaryManager {
         this.countryFeatures = topojsonFeature(topology, topology.objects[countryKey]).features;
         this.extraFeature = topojsonFeature(topology, topology.objects[extraKey]).features;
         this.tendashFeature = topojsonFeature(topology, topology.objects[tendashKey]).features;
-
-        const provMeshGeom = topojsonMesh(topology, topology.objects[provinceKey], (a, b) => a !== b);
-        this.provinceMeshFeature = [{ type: 'Feature', geometry: provMeshGeom, properties: { level: 'province-mesh' } }];
 
         this.countyMeshGeom = topojsonMesh(topology, topology.objects[countyKey], (a, b) => a !== b);
         this.provinceMeshGeom = topojsonMesh(topology, topology.objects[provinceKey], (a, b) => a !== b);
