@@ -1675,7 +1675,21 @@ class MapRenderer {
         });
 
         this.renderDeck([layer]);
-        this.updateBivariateLegend(bivar, xStats, yStats, xNorm, yNorm, interpX, interpY, xSet, ySet, blendMode, xBinner, yBinner, paletteInfo);
+        return {
+            bivar,
+            xStats,
+            yStats,
+            xNorm,
+            yNorm,
+            interpX,
+            interpY,
+            xSet,
+            ySet,
+            blendMode,
+            xBinner,
+            yBinner,
+            paletteInfo
+        };
     }
 
     updateLayers(features, data, metric, metricKey, cfg, filterRange, catFilter) {
@@ -1692,7 +1706,7 @@ class MapRenderer {
 
         const stats = app.dataManager.getPropertyStats(data, metric);
         if (!stats) {
-            return;
+            return null;
         }
 
         const settings = (cfg.metrics && cfg.metrics[metricKey]?.settings) || { scale: 'linear' };
@@ -1749,7 +1763,14 @@ class MapRenderer {
         });
 
         this.renderDeck([layer]);
-        this.updateLegend(stats, interpolator, normalize, settings, binner, palette);
+        return {
+            stats,
+            settings,
+            interpolator,
+            normalize,
+            binner,
+            palette
+        };
     }
 
     getFeatureIdFromFeature(feature) {
@@ -3033,7 +3054,7 @@ class ChoroplethApp {
             catFilter = new Set(selection);
         }
 
-        this.mapRenderer.updateLayers(
+        const legendData = this.mapRenderer.updateLayers(
             this.boundaryManager.features,
             this.state.currentData,
             unit,
@@ -3042,6 +3063,16 @@ class ChoroplethApp {
             null,
             catFilter
         );
+        if (legendData) {
+            this.mapRenderer.updateLegend(
+                legendData.stats,
+                legendData.interpolator,
+                legendData.normalize,
+                legendData.settings,
+                legendData.binner,
+                legendData.palette
+            );
+        }
 
         this.setupFilterUI(false, cfg, unit, metric, null, { stats });
     }
@@ -3131,13 +3162,30 @@ class ChoroplethApp {
             blendMode: def.method?.blendMode || 'additive'
         };
 
-        this.mapRenderer.updateBivariateLayers(
+        const legendData = this.mapRenderer.updateBivariateLayers(
             this.boundaryManager.features,
             { x: xData, y: yData },
             bivar,
             { x: xCfg, y: yCfg },
             null
         );
+        if (legendData) {
+            this.mapRenderer.updateBivariateLegend(
+                legendData.bivar,
+                legendData.xStats,
+                legendData.yStats,
+                legendData.xNorm,
+                legendData.yNorm,
+                legendData.interpX,
+                legendData.interpY,
+                legendData.xSet,
+                legendData.ySet,
+                legendData.blendMode,
+                legendData.xBinner,
+                legendData.yBinner,
+                legendData.paletteInfo
+            );
+        }
 
         this.setupFilterUI(true, cfg, null, null, bivar);
     }
@@ -3524,7 +3572,7 @@ class ChoroplethApp {
         const stats = this.dataManager.getPropertyStats(this.state.currentData, composite.key);
         const range = this.clampFilterRange(stats, this.mapRenderer.filterState.range);
 
-        this.mapRenderer.updateLayers(
+        const legendData = this.mapRenderer.updateLayers(
             this.boundaryManager.features,
             this.state.currentData,
             composite.key,
@@ -3533,6 +3581,16 @@ class ChoroplethApp {
             range,
             null
         );
+        if (legendData) {
+            this.mapRenderer.updateLegend(
+                legendData.stats,
+                legendData.interpolator,
+                legendData.normalize,
+                legendData.settings,
+                legendData.binner,
+                legendData.palette
+            );
+        }
 
         this.setupFilterUI(false, cfg, composite.key, metric, null, { stats, currentRange: range });
     }
