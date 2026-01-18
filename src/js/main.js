@@ -411,7 +411,9 @@ class DataManager {
         if (!data || !data.idIndex || !feature) return null;
 
         const props = feature.properties || {};
-        const id = this.normalizeId(props.CODE ?? props.code ?? feature.id);
+        const id = feature.id != null
+            ? String(feature.id)
+            : this.normalizeId(props.CODE ?? props.code ?? feature.id);
         const idx = data.idIndex.get(id);
         if (idx !== undefined) {
             if (property && property.startsWith('COMPOSITE__')) {
@@ -430,7 +432,9 @@ class DataManager {
     getFeatureNameByFeature(data, feature) {
         if (!data || !data.idIndex || !Array.isArray(data.names) || !feature) return null;
         const props = feature.properties || {};
-        const id = this.normalizeId(props.CODE ?? props.code ?? feature.id);
+        const id = feature.id != null
+            ? String(feature.id)
+            : this.normalizeId(props.CODE ?? props.code ?? feature.id);
         const idx = data.idIndex.get(id);
         if (idx === undefined) return null;
         const rawName = data.names[idx];
@@ -1787,8 +1791,10 @@ class MapRenderer {
     }
 
     getFeatureIdFromFeature(feature) {
-        const props = feature?.properties || {};
-        return app.dataManager.normalizeId(props.CODE ?? props.code ?? feature?.id);
+        if (!feature) return null;
+        if (feature.id != null) return String(feature.id);
+        const props = feature.properties || {};
+        return app.dataManager.normalizeId(props.CODE ?? props.code ?? feature.id);
     }
 
     ensureStaticLayers() {
