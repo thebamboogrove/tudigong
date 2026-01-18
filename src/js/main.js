@@ -190,7 +190,8 @@ class DataManager {
             indexes: new Map(),
             loadingPromises: new Map(),
             compositeCache: new Map(),
-            packCache: new Map()
+            packCache: new Map(),
+            statsCache: new Map()
         };
     }
 
@@ -441,21 +442,29 @@ class DataManager {
     getPropertyStats(data, property) {
         if (!data) return null;
 
+        if (this.statsCache.has(property)) return this.statsCache.get(property);
+
         if (property && property.startsWith('COMPOSITE__')) {
             const arr = this.compositeCache.get(property);
             if (!arr) return null;
             const values = Array.from(arr).sort((a, b) => a - b);
-            return this.computeNumericStats(values);
+            const stats = this.computeNumericStats(values);
+            this.statsCache.set(property, stats);
+            return stats;
         }
 
         const meta = data.metricIndex?.metrics?.[property];
         if (meta?.stats && meta.kind === 'numeric') {
-            return { type: 'numeric', ...meta.stats };
+            const stats = { type: 'numeric', ...meta.stats };
+            this.statsCache.set(property, stats);
+            return stats;
         }
 
         if (data.data[property]) {
             const values = Array.from(data.data[property]).sort((a, b) => a - b);
-            return this.computeNumericStats(values);
+            const stats = this.computeNumericStats(values);
+            this.statsCache.set(property, stats);
+            return stats;
         }
 
         if (data.stringIndex[property]) {
@@ -469,7 +478,9 @@ class DataManager {
             const categories = Array.from(counts.entries())
                 .sort((a, b) => b[1] - a[1])
                 .map(([value, count]) => ({ value, count }));
-            return { type: 'categorical', categories, uniqueValues: categories.length };
+            const stats = { type: 'categorical', categories, uniqueValues: categories.length };
+            this.statsCache.set(property, stats);
+            return stats;
         }
 
         if (data.stringData && data.stringData[property]) {
@@ -477,7 +488,9 @@ class DataManager {
             data.stringData[property].forEach(v => counts.set(v, (counts.get(v) || 0) + 1));
             const categories = Array.from(counts.entries()).sort((a, b) => b[1] - a[1])
                 .map(([value, count]) => ({ value, count }));
-            return { type: 'categorical', categories, uniqueValues: categories.length };
+            const stats = { type: 'categorical', categories, uniqueValues: categories.length };
+            this.statsCache.set(property, stats);
+            return stats;
         }
         return null;
     }
