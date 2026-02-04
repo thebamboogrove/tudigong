@@ -667,7 +667,7 @@ const renderSvgAxis = ({
     axis.svg.removeAttribute('viewBox');
     axis.svg.setAttribute('width', '100%');
     axis.svg.setAttribute('height', '100%');
-    axis.svg.setAttribute('shape-rendering', 'crispEdges');
+    axis.svg.setAttribute('shape-rendering', 'geometricprecision');
 
     axis.ticksGroup.replaceChildren();
 
