@@ -451,7 +451,7 @@ class DataManager {
         if (property && property.startsWith('COMPOSITE__')) {
             const arr = this.compositeCache.get(property);
             if (!arr) return null;
-            const values = Array.from(arr).sort((a, b) => a - b);
+            const values = arr.slice().sort();
             const stats = this.computeNumericStats(values);
             this.statsCache.set(property, stats);
             return stats;
@@ -465,7 +465,7 @@ class DataManager {
         }
 
         if (data.data[property]) {
-            const values = Array.from(data.data[property]).sort((a, b) => a - b);
+            const values = data.data[property].slice().sort();
             const stats = this.computeNumericStats(values);
             this.statsCache.set(property, stats);
             return stats;
