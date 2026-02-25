@@ -451,7 +451,7 @@ class DataManager {
         if (property && property.startsWith('COMPOSITE__')) {
             const arr = this.compositeCache.get(property);
             if (!arr) return null;
-            const values = Array.from(arr).sort((a, b) => a - b);
+            const values = arr.slice().sort();
             const stats = this.computeNumericStats(values);
             this.statsCache.set(property, stats);
             return stats;
@@ -465,7 +465,7 @@ class DataManager {
         }
 
         if (data.data[property]) {
-            const values = Array.from(data.data[property]).sort((a, b) => a - b);
+            const values = data.data[property].slice().sort();
             const stats = this.computeNumericStats(values);
             this.statsCache.set(property, stats);
             return stats;
@@ -877,6 +877,8 @@ class MapRenderer {
             bivar: null,
             valuesX: null,
             valuesY: null,
+            packIndexX: null,
+            packIndexY: null,
             data: null,
             cfg: null
         };
@@ -1570,6 +1572,31 @@ class MapRenderer {
         if (!this.bivarState.valuesX || !this.bivarState.valuesY || this.bivarKey !== key) {
             this.bivarState.valuesX = features.map(f => app.dataManager.getFeatureValueByFeature(xData, f, bivar.x.unit));
             this.bivarState.valuesY = features.map(f => app.dataManager.getFeatureValueByFeature(yData, f, bivar.y.unit));
+
+            const xBuffer = xData?.data?.[bivar.x.unit] ?? null;
+            const yBuffer = yData?.data?.[bivar.y.unit] ?? null;
+
+            const piX = new Int32Array(features.length).fill(-1);
+            const piY = new Int32Array(features.length).fill(-1);
+            if (xBuffer && xData.idIndex) {
+                for (let i = 0; i < features.length; i++) {
+                    const id = features[i].id;
+                    const idx = xData.idIndex.get(id != null ? String(id) : '');
+                    if (idx !== undefined) piX[i] = idx;
+                }
+            }
+            if (yBuffer && yData.idIndex) {
+                for (let i = 0; i < features.length; i++) {
+                    const id = features[i].id;
+                    const idx = yData.idIndex.get(id != null ? String(id) : '');
+                    if (idx !== undefined) piY[i] = idx;
+                }
+            }
+            this.bivarState.packIndexX = piX;
+            this.bivarState.packIndexY = piY;
+            this.bivarState.xBuffer = xBuffer;
+            this.bivarState.yBuffer = yBuffer;
+
             this.bivarKey = key;
         }
 
@@ -1656,8 +1683,10 @@ class MapRenderer {
             stroked: false,
             pickable: true,
             getFillColor: (f, {index}) => {
-                const vx = this.bivarState.valuesX[index];
-                const vy = this.bivarState.valuesY[index];
+                const piX = this.bivarState.packIndexX[index];
+                const piY = this.bivarState.packIndexY[index];
+                const vx = (piX >= 0 && this.bivarState.xBuffer) ? this.bivarState.xBuffer[piX] : this.bivarState.valuesX[index];
+                const vy = (piY >= 0 && this.bivarState.yBuffer) ? this.bivarState.yBuffer[piY] : this.bivarState.valuesY[index];
 
                 if (!Number.isFinite(vx) || !Number.isFinite(vy)) return [200,200,200,255];
 
@@ -1736,6 +1765,16 @@ class MapRenderer {
         const binner = this.buildBinner(values, stats, settings, hasPalette ? settings.palette.length : defaultBins, hasPalette);
         const palette = binner ? this.resolveUniPalette(settings, interpolator, binner.bins) : null;
 
+        const metricBuffer = data.data[metric] ?? null;
+        const packIndex = new Int32Array(features.length).fill(-1);
+        if (metricBuffer) {
+            for (let i = 0; i < features.length; i++) {
+                const id = features[i].id;
+                const idx = data.idIndex.get(id != null ? String(id) : '');
+                if (idx !== undefined) packIndex[i] = idx;
+            }
+        }
+
         const layer = new GeoJsonLayer({
             id: 'choropleth',
             data: features,
@@ -1744,7 +1783,8 @@ class MapRenderer {
             stroked: false,
             pickable: true,
             getFillColor: (f, {index}) => {
-                const v = values[index];
+                const pi = packIndex[index];
+                const v = (pi >= 0 && metricBuffer) ? metricBuffer[pi] : values[index];
                 if (v == null) return [200,200,200,255];
 
                 if (stats.type === 'categorical') {
