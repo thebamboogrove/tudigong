@@ -967,6 +967,12 @@ class MapRenderer {
         tooltip.style.transform = 'translate3d(0, 0, 0)';
     }
 
+    #buildSetupKey(metric, settings) {
+        return `${metric}::${settings?.scale}::${JSON.stringify(settings?.domain)}` +
+        `::${settings?.exponent}::${settings?.binning?.method}` +
+        `::${settings?.binning?.bins}::${JSON.stringify(settings?.palette)}`;
+    }
+
     getDpr() {
         return window.devicePixelRatio || 1;
     }
@@ -1754,15 +1760,13 @@ class MapRenderer {
 
         const settings = (cfg.metrics && cfg.metrics[metricKey]?.settings) || { scale: 'linear' };
 
-        const setupKey = `${metric}::${settings?.scale}::${JSON.stringify(settings?.domain)}` +
-            `::${settings?.exponent}::${settings?.binning?.method}` +
-            `::${settings?.binning?.bins}::${JSON.stringify(settings?.palette)}`;
-
         const cache = this.layerState.metricCache;
+
         const isFilterOnlyChange = cache !== null
             && cache.data === data
             && cache.features === features
-            && cache.setupKey === setupKey;
+            && cache.metric === metric
+            && (cache.settings === settings || cache.setupKey === this.#buildSetupKey(metric, settings));
 
         let stats, normalize, interpolator, values, binner, palette, getFillColor;
 
@@ -1810,7 +1814,7 @@ class MapRenderer {
             };
 
             this.layerState.metricCache = {
-                setupKey, data, features,
+                setupKey: this.#buildSetupKey(metric, settings), data, features,
                 stats, settings, normalize, interpolator,
                 values, binner, palette, getFillColor
             };
