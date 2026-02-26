@@ -1787,7 +1787,7 @@ class MapRenderer {
             getFillColor = (f, { index }) => {
                 const v = values[index];
                 if (v == null) return [200, 200, 200, 255];
-
+              
                 if (stats.type === 'categorical') {
                     if (this.filterState.categorical && this.filterState.categorical.size > 0 && !this.filterState.categorical.has(v)) return [0, 0, 0, 0];
                     const c = d3.rgb(interpolator(v));
