@@ -932,7 +932,8 @@ class MapRenderer {
         return {
             main: [],
             base: null,
-            border: null
+            border: null,
+            metricCache: null
         };
     }
 
@@ -1565,6 +1566,7 @@ class MapRenderer {
         this.dataState.currentMetricSettings = null;
         this.filterState.bivar = filters || { x: null, y: null };
         this.dataState.currentMetric = null; // clear
+        this.layerState.metricCache = null;  // also clear
 
         const xData = dataByAxis?.x || this.dataState.currentData;
         const yData = dataByAxis?.y || this.dataState.currentData;
@@ -1750,29 +1752,68 @@ class MapRenderer {
         this.filterState.range = filterRange;
         this.filterState.categorical = catFilter;
 
-        const stats = app.dataManager.getPropertyStats(data, metric);
-        if (!stats) {
-            return null;
-        }
-
         const settings = (cfg.metrics && cfg.metrics[metricKey]?.settings) || { scale: 'linear' };
-        const normalize = this.buildScaler(stats, settings);
-        const interpolator = this.buildInterpolator(settings, stats);
 
-        const values = features.map(f => app.dataManager.getFeatureValueByFeature(data, f, metric));
-        const defaultBins = Math.max(2, Number(settings?.legendSteps || 6));
-        const hasPalette = Array.isArray(settings?.palette) && settings.palette.length > 0;
-        const binner = this.buildBinner(values, stats, settings, hasPalette ? settings.palette.length : defaultBins, hasPalette);
-        const palette = binner ? this.resolveUniPalette(settings, interpolator, binner.bins) : null;
+        const setupKey = `${metric}::${settings?.scale}::${JSON.stringify(settings?.domain)}` +
+            `::${settings?.exponent}::${settings?.binning?.method}` +
+            `::${settings?.binning?.bins}::${JSON.stringify(settings?.palette)}`;
 
-        const metricBuffer = data.data[metric] ?? null;
-        const packIndex = new Int32Array(features.length).fill(-1);
-        if (metricBuffer) {
-            for (let i = 0; i < features.length; i++) {
-                const id = features[i].id;
-                const idx = data.idIndex.get(id != null ? String(id) : '');
-                if (idx !== undefined) packIndex[i] = idx;
+        const cache = this.layerState.metricCache;
+        const isFilterOnlyChange = cache !== null
+            && cache.data === data
+            && cache.features === features
+            && cache.setupKey === setupKey;
+
+        let stats, normalize, interpolator, values, binner, palette, getFillColor;
+
+        if (isFilterOnlyChange) {
+            ({ stats, normalize, interpolator, values, binner, palette, getFillColor } = cache);
+        } else {
+            stats = app.dataManager.getPropertyStats(data, metric);
+            if (!stats) {
+                this.layerState.metricCache = null;
+                return null;
             }
+
+            normalize = this.buildScaler(stats, settings);
+            interpolator = this.buildInterpolator(settings, stats);
+
+            values = features.map(f => app.dataManager.getFeatureValueByFeature(data, f, metric));
+            const defaultBins = Math.max(2, Number(settings?.legendSteps || 6));
+            const hasPalette = Array.isArray(settings?.palette) && settings.palette.length > 0;
+            binner = this.buildBinner(values, stats, settings, hasPalette ? settings.palette.length : defaultBins, hasPalette);
+            palette = binner ? this.resolveUniPalette(settings, interpolator, binner.bins) : null;
+
+            getFillColor = (f, { index }) => {
+                const v = values[index];
+                if (v == null) return [200, 200, 200, 255];
+              
+                if (stats.type === 'categorical') {
+                    if (this.filterState.categorical && this.filterState.categorical.size > 0 && !this.filterState.categorical.has(v)) return [0, 0, 0, 0];
+                    const c = d3.rgb(interpolator(v));
+                    return [c.r, c.g, c.b, 255];
+                }
+
+                if (!Number.isFinite(v)) return [200,200,200,255];
+                if (this.filterState.range && (v < this.filterState.range.min || v > this.filterState.range.max)) return [0, 0, 0, 0];
+
+                if (binner && palette) {
+                    const idx = binner.index(v);
+                    if (idx == null) return [200,200,200,255];
+                    const c = d3.rgb(palette[idx] || palette[palette.length - 1]);
+                    return [c.r, c.g, c.b, 255];
+                }
+
+                const t = normalize(v);
+                const c = d3.rgb(interpolator(t));
+                return [c.r, c.g, c.b, 255];
+            };
+
+            this.layerState.metricCache = {
+                setupKey, data, features,
+                stats, settings, normalize, interpolator,
+                values, binner, palette, getFillColor
+            };
         }
 
         const layer = new GeoJsonLayer({
@@ -1782,31 +1823,7 @@ class MapRenderer {
             filled: true,
             stroked: false,
             pickable: true,
-            getFillColor: (f, {index}) => {
-                const pi = packIndex[index];
-                const v = (pi >= 0 && metricBuffer) ? metricBuffer[pi] : values[index];
-                if (v == null) return [200,200,200,255];
-
-                if (stats.type === 'categorical') {
-                    if (this.filterState.categorical && this.filterState.categorical.size > 0 && !this.filterState.categorical.has(v)) return [0,0,0,0];
-                    const c = d3.rgb(interpolator(v));
-                    return [c.r, c.g, c.b, 255];
-                }
-
-                if (!Number.isFinite(v)) return [200,200,200,255];
-                if (this.filterState.range && (v < this.filterState.range.min || v > this.filterState.range.max)) return [0,0,0,0];
-
-                if (binner && palette) {
-                    const idx = binner.index(v);
-                    if (idx == null) return [200,200,200,255];
-                    const c = d3.rgb(palette[idx] || palette[palette.length - 1]);
-                    return [c.r, c.g, c.b, 255];
-                }
-
-                const t = normalize(v); // normalization [0,1]
-                const c = d3.rgb(interpolator(t));
-                return [c.r, c.g, c.b, 255];
-            },
+            getFillColor,
             updateTriggers: {
                 getFillColor: [
                     metric,
