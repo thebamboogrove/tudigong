@@ -300,7 +300,7 @@ class DataManager {
         });
 
         if (!pending.size) return;
-        
+
         await Promise.all(
             Array.from(pending.entries()).map(async ([packName, metrics]) => {
                 const packMeta = packs[packName];
@@ -1319,11 +1319,15 @@ class MapRenderer {
     }
 
     resolveCategoricalDomain(stats, settings) {
+        const seen = new Set(Array.isArray(settings?.domain) ? settings.domain : []);
         const domain = Array.isArray(settings?.domain) ? settings.domain.slice() : [];
         if (Array.isArray(stats?.categories)) {
-            stats.categories.forEach(cat => {
-                if (!domain.includes(cat.value)) domain.push(cat.value);
-            });
+            for (const cat of stats.categories) {
+                if (!seen.has(cat.value)) {
+                    seen.add(cat.value);
+                    domain.push(cat.value);
+                }
+            }
         }
         return domain;
     }
