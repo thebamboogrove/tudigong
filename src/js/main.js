@@ -233,21 +233,20 @@ class DataManager {
         const base = `./src/data/metrics/${category}`;
         const index = await this.loadJSON(`${base}/index.json`);
 
-        const idsPayload = await this.loadJSON(this.resolveDataPath(base, index.idsFile || 'ids.json'));
+        const [idsPayload, stringsPayload, namesPayload] = await Promise.all([
+        this.loadJSON(this.resolveDataPath(base, index.idsFile || 'ids.json')),
+        index.stringsFile
+            ? this.loadJSON(this.resolveDataPath(base, index.stringsFile))
+            : Promise.resolve(null),
+        index.namesFile
+            ? this.loadJSON(this.resolveDataPath(base, index.namesFile))
+            : Promise.resolve(null)
+        ]);
+
         const rawIds = Array.isArray(idsPayload?.ids) ? idsPayload.ids : [];
         const ids = rawIds.map(id => this.normalizeId(id));
-
-        let dictionaries = {};
-        if (index.stringsFile) {
-            const stringsPayload = await this.loadJSON(this.resolveDataPath(base, index.stringsFile));
-            dictionaries = stringsPayload?.dictionaries || {};
-        }
-
-        let names = null;
-        if (index.namesFile) {
-            const namesPayload = await this.loadJSON(this.resolveDataPath(base, index.namesFile));
-            names = Array.isArray(namesPayload?.names) ? namesPayload.names : null;
-        }
+        const dictionaries = stringsPayload?.dictionaries || {};
+        const names = Array.isArray(namesPayload?.names) ? namesPayload.names : null;
 
         const count = Number(index.count ?? ids.length ?? 0);
         const idIndex = new Map();
@@ -300,17 +299,39 @@ class DataManager {
             pending.get(pack).push({ metricId, meta });
         });
 
-        for (const [packName, metrics] of pending.entries()) {
-            const packMeta = packs[packName];
-            if (!packMeta?.file) continue;
-            const cacheKey = `${category}:${packName}`;
-            let buffer = this.packCache.get(cacheKey);
-            if (!buffer) {
-                buffer = await this.loadBinary(this.resolveDataPath(base, packMeta.file));
-                this.packCache.set(cacheKey, buffer);
-            }
-            metrics.forEach(entry => this.hydrateMetricFromPack(data, entry.metricId, entry.meta, buffer));
-        }
+        if (!pending.size) return;
+
+        await Promise.all(
+            Array.from(pending.entries()).map(async ([packName, metrics]) => {
+                const packMeta = packs[packName];
+                if (!packMeta?.file) return;
+
+                const cacheKey = `${category}:${packName}`;
+                let buffer = this.packCache.get(cacheKey);
+
+                if (!buffer) {
+                    const inFlight = this.loadingPromises.get(cacheKey);
+                    if (inFlight) {
+                        buffer = await inFlight;
+                    } else {
+                        const fetchPromise = this.loadBinary(
+                            this.resolveDataPath(base, packMeta.file)
+                        );
+                        this.loadingPromises.set(cacheKey, fetchPromise);
+                        try {
+                            buffer = await fetchPromise;
+                            this.packCache.set(cacheKey, buffer);
+                        } finally {
+                            this.loadingPromises.delete(cacheKey);
+                        }
+                    }
+                }
+
+                metrics.forEach(entry =>
+                    this.hydrateMetricFromPack(data, entry.metricId, entry.meta, buffer)
+                );
+            })
+        );
     }
 
     hydrateMetricFromPack(data, metricId, meta, buffer) {
@@ -967,6 +988,12 @@ class MapRenderer {
         tooltip.style.transform = 'translate3d(0, 0, 0)';
     }
 
+    #buildSetupKey(metric, settings) {
+        return `${metric}::${settings?.scale}::${JSON.stringify(settings?.domain)}` +
+        `::${settings?.exponent}::${settings?.binning?.method}` +
+        `::${settings?.binning?.bins}::${JSON.stringify(settings?.palette)}`;
+    }
+
     getDpr() {
         return window.devicePixelRatio || 1;
     }
@@ -1292,11 +1319,15 @@ class MapRenderer {
     }
 
     resolveCategoricalDomain(stats, settings) {
+        const seen = new Set(Array.isArray(settings?.domain) ? settings.domain : []);
         const domain = Array.isArray(settings?.domain) ? settings.domain.slice() : [];
         if (Array.isArray(stats?.categories)) {
-            stats.categories.forEach(cat => {
-                if (!domain.includes(cat.value)) domain.push(cat.value);
-            });
+            for (const cat of stats.categories) {
+                if (!seen.has(cat.value)) {
+                    seen.add(cat.value);
+                    domain.push(cat.value);
+                }
+            }
         }
         return domain;
     }
@@ -1754,15 +1785,13 @@ class MapRenderer {
 
         const settings = (cfg.metrics && cfg.metrics[metricKey]?.settings) || { scale: 'linear' };
 
-        const setupKey = `${metric}::${settings?.scale}::${JSON.stringify(settings?.domain)}` +
-            `::${settings?.exponent}::${settings?.binning?.method}` +
-            `::${settings?.binning?.bins}::${JSON.stringify(settings?.palette)}`;
-
         const cache = this.layerState.metricCache;
+
         const isFilterOnlyChange = cache !== null
             && cache.data === data
             && cache.features === features
-            && cache.setupKey === setupKey;
+            && cache.metric === metric
+            && (cache.settings === settings || cache.setupKey === this.#buildSetupKey(metric, settings));
 
         let stats, normalize, interpolator, values, binner, palette, getFillColor;
 
@@ -1810,7 +1839,7 @@ class MapRenderer {
             };
 
             this.layerState.metricCache = {
-                setupKey, data, features,
+                setupKey: this.#buildSetupKey(metric, settings), data, features,
                 stats, settings, normalize, interpolator,
                 values, binner, palette, getFillColor
             };
